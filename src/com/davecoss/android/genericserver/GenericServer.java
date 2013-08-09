@@ -1,10 +1,13 @@
 package com.davecoss.android.genericserver;
 
 import java.io.Console;
+import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
@@ -18,6 +21,7 @@ import org.json.simple.JSONObject;
 public class GenericServer implements Runnable {
 	int port = 4242;
 	private ServerSocket listener;
+    private String userdir = "/tmp";
     
     private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
@@ -66,7 +70,7 @@ public class GenericServer implements Runnable {
 	print_footer(output);
     }
 
-	public static void do_get(String input, PrintWriter output) {
+	public void do_get(String input, PrintWriter output) {
 		String[] tokens = input.split(" ");
 		if (tokens.length < 2)
 			return;
@@ -95,7 +99,44 @@ public class GenericServer implements Runnable {
 			} else {
 			    html_write(request.get(0), date_string, output);
 			}
-		} else if (request.get(0).equals("/favicon.ico")) {
+		} else if(request.get(0).equals("user") && request.size() > 1) {
+		    
+		    InputStreamReader file = null;
+		    String err = "";
+		    try{
+			if(request.get(1).length() != 0)
+			    file = new InputStreamReader(new FileInputStream(new File(userdir, request.get(1))));
+		    } catch(SecurityException se) {
+			    err = "Cannot read" + request.get(1);
+			    file = null;
+		    } catch(FileNotFoundException fnfe) {
+			err = "File not found " + request.get(1);
+			file = null;
+		    }
+
+		    if(file == null)
+			{
+			    html_write("File error", err, "HTTP/1.1 401 Permission Denied", output);
+			    return;
+			}
+		    char[] buffer = new char[4096];
+		    
+		    output.println(STATUS_OK);
+		    output.println("Content-type: text/html");
+		    output.println("");
+		    try{
+			int nchars = -1;
+			while((nchars = file.read(buffer, 0, buffer.length)) != -1)
+			    {
+				output.write(buffer, 0, nchars);
+			    }
+		    } catch(IOException ioe) {
+			output.println("Error reading file: " + ioe.getMessage());
+		    }
+		    output.println("");
+		    output.flush();
+		}
+		else if (request.get(0).equals("/favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
 			output.println("");
 			output.println(":-P");
@@ -159,6 +200,16 @@ public class GenericServer implements Runnable {
 				server_thread = new Thread(serverd);
 				server_thread.start();
 				info("Server is running on port " + serverd.get_port());
+			    }
+			else if(input.equals("getdir"))
+			    {
+				cout.println(serverd.userdir);
+			    }
+			else if(input.equals("setdir"))
+			    {
+				String dir = console.readLine("What directory? ");
+				if(dir.length() > 0)
+				    serverd.userdir = dir;
 			    }
 			else
 			    {
