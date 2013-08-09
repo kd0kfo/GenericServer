@@ -10,9 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import 	java.util.ArrayList;
 import 	java.util.Arrays;
-//import org.json.JSONArray;
-//import org.json.JSONException;
-//import org.json.JSONObject;
+import org.json.simple.JSONObject;
 
 public class GenericServer implements Runnable {
 	int port = 4242;
@@ -28,16 +26,17 @@ public class GenericServer implements Runnable {
 		}
 	}
 
+        @SuppressWarnings("unchecked")
 	public static void json_write(String request,
 			HashMap<String, String> content, PrintWriter output) {
-		/*
-		 * JSONObject json_content = new JSONObject(content); JSONObject
-		 * json_data = (new JSONObject()).put(request, json_content);
-		 * output.println("HTTP/1.1 200 Ok");
-		 * output.println("Content-Type: text/json"); output.println("");
-		 * output.println(json_data.toString()); output.println("");
-		 */
-	    html_write("JSON is not yet implemented.","JSON is not yet implemented.","HTTP/1.1 500 Not Yet Implemented",output);
+	     JSONObject json_content = new JSONObject(content); 
+	     JSONObject json_data = new JSONObject();
+	     json_data.put("content", json_content);
+	     output.println(STATUS_OK);
+	     output.println("Content-type: text/json");
+	     output.println("");
+	     output.println(json_data.toString());
+	     output.println("");
 	    
 	}
 
@@ -77,7 +76,7 @@ public class GenericServer implements Runnable {
 			} else {
 				date_string = (new Date()).toString();
 			}
-			if (request.size() > 2 && request.get(2).equals("json")) {
+			if (request.get(request.size() - 1).equals("json")) {
 				HashMap<String, String> map = new HashMap<String, String>();
 				map.put("date", date_string);
 				json_write(request.get(0), map, output);
