@@ -1,10 +1,12 @@
 package com.davecoss.android.genericserver;
 
+import java.io.Console;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
+import java.net.SocketException;
 import java.net.Socket;
 import java.util.Date;
 import java.util.HashMap;
@@ -121,9 +123,27 @@ public class GenericServer implements Runnable {
 
 	public static void main(String[] args) throws IOException {
 		GenericServer serverd = new GenericServer();
-		info("Starting server on port " + serverd.port);
 		Thread server_thread = new Thread(serverd);
+		Console console = System.console();
 		server_thread.start();
+		info("Server is running on port " + serverd.port);
+
+		String input;
+		PrintWriter cout = console.writer();
+		while((input = console.readLine(">")) != null)
+		    {
+			if(input.equals("stop"))
+			    {
+				break;
+			    }
+			else
+			    {
+				cout.println("Unknown: " + input);
+			    }
+		    }
+		cout.println("Stopping");
+		server_thread.interrupt();
+		serverd.stop_server();
 	}
 
 	@Override
@@ -157,7 +177,11 @@ public class GenericServer implements Runnable {
 					socket.close();
 					debug("Socket closed");
 				}
-			} catch (IOException ioe) {
+			} 
+			catch(SocketException se) {
+				debug("Socket closed");
+			}
+			catch (IOException ioe) {
 				debug("IOException: " + ioe.getMessage());
 			}
 		}// while not interrupted
@@ -187,4 +211,5 @@ public class GenericServer implements Runnable {
 	{
 		return Integer.toString(this.listener.getLocalPort());
 	}
+
 }
