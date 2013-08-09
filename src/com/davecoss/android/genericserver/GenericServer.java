@@ -1,6 +1,5 @@
 package com.davecoss.android.genericserver;
 
-import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -12,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
 import 	java.util.ArrayList;
@@ -174,63 +174,6 @@ public class GenericServer implements Runnable {
 		output.println("");
 	}
 
-	public static void main(String[] args) throws IOException {
-		GenericServer serverd = new GenericServer();
-		Thread server_thread = new Thread(serverd);
-		Console console = System.console();
-		PrintWriter cout = console.writer();
-		server_thread.start();
-		info("Server is running on port " + serverd.get_port());
-
-		String input;
-		while((input = console.readLine(">")) != null)
-		    {
-			if(input.equals("stop"))
-			    {
-				break;
-			    }
-			else if(input.equals("getaddr"))
-			    {
-				cout.println(serverd.get_address());
-			    }
-			else if(input.equals("setaddr"))
-			    {
-				String addr = console.readLine("What address? ");
-				server_thread.interrupt();
-				serverd.stop_server();
-				try{
-				    server_thread.join();
-				} catch(InterruptedException ie) {
-				    cout.println("Error: " + ie.getMessage());
-				    break;
-				}
-				server_thread = null;
-				serverd = null;
-				serverd = new GenericServer(InetAddress.getByName(addr));
-				server_thread = new Thread(serverd);
-				server_thread.start();
-				info("Server is running on port " + serverd.get_port());
-			    }
-			else if(input.equals("getdir"))
-			    {
-				cout.println(serverd.userdir);
-			    }
-			else if(input.equals("setdir"))
-			    {
-				String dir = console.readLine("What directory? ");
-				if(dir.length() > 0)
-				    serverd.userdir = dir;
-			    }
-			else
-			    {
-				cout.println("Unknown: " + input);
-			    }
-		    }
-		cout.println("Stopping");
-		server_thread.interrupt();
-		serverd.stop_server();
-	}
-
 	@Override
 	public void run() {
 		while (!Thread.currentThread().isInterrupted()) {
@@ -296,5 +239,14 @@ public class GenericServer implements Runnable {
 	{
 		return Integer.toString(this.listener.getLocalPort());
 	}
+
+    public String getdir(){return userdir;}
+    
+    public String setdir(String dir)
+	{
+	    userdir = dir;
+	    return dir;
+	}
+
 
 }
