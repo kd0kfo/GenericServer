@@ -15,6 +15,8 @@ import java.util.HashMap;
 public class GenericServer implements Runnable {
 	int port = 4242;
 	private ServerSocket listener;
+    
+    private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
 	public GenericServer() {
 		try {
@@ -33,19 +35,23 @@ public class GenericServer implements Runnable {
 		 * output.println("Content-Type: text/json"); output.println("");
 		 * output.println(json_data.toString()); output.println("");
 		 */
-		output.println("HTTP/1.1 500 Not Yet Implemented");
-		output.println("");
-		output.println("JSON is not yet implemented.");
-		output.println("");
-
+	    html_write("JSON is not yet implemented.","JSON is not yet implemented.","HTTP/1.1 500 Not Yet Implemented",output);
+	    
 	}
 
-	public static void html_write(String title, String content,
-			PrintWriter output) {
-		print_header(output, title);
-		output.println(content);
-		print_footer(output);
-	}
+    public static void html_write(String title, String content, String status,
+				      PrintWriter output) {
+	print_header(output, title, status);
+	output.println(content);
+	print_footer(output);
+    }
+    
+    public static void html_write(String title, String content, 
+				      PrintWriter output) {
+	print_header(output, title, STATUS_OK);
+	output.println(content);
+	print_footer(output);
+    }
 
 	public static void do_get(String input, PrintWriter output) {
 		String[] tokens = input.split(" ");
@@ -76,7 +82,7 @@ public class GenericServer implements Runnable {
 			output.println(":-P");
 			output.println("");
 		} else {
-			output.println("You asked for (" + request + ")");
+		    html_write(request, "You asked for (" + request + ")",output);
 		}
 
 	}
@@ -85,8 +91,12 @@ public class GenericServer implements Runnable {
 		System.out.println(msg);
 	}
 
-	public static void print_header(PrintWriter output, String request) {
-		output.println("HTTP/1.1 200 Ok");
+	public static void info(String msg) {
+		System.out.println(msg);
+	}
+
+    public static void print_header(PrintWriter output, String request, String status) {
+		output.println(status);
 		output.println("Content-Type: text/html; charset=UTF-8");
 		output.println("");
 		output.println("<!DOCTYPE html>");
@@ -104,6 +114,7 @@ public class GenericServer implements Runnable {
 
 	public static void main(String[] args) throws IOException {
 		GenericServer serverd = new GenericServer();
+		info("Starting server on port " + serverd.port);
 		Thread server_thread = new Thread(serverd);
 		server_thread.start();
 	}
