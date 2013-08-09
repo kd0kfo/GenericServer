@@ -138,11 +138,16 @@ public class GenericServer implements Runnable {
 		    output.println("");
 		    output.flush();
 		}
-		else if (request.get(0).equals("/favicon.ico")) {
+		else if (request.get(0).equals("favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
 			output.println("");
 			output.println(":-P");
 			output.println("");
+		} else if (request.get(0).equals("echo")) {
+		    String echo = "";
+		    if (request.size() > 1)
+			echo = request.get(1);
+		    html_write(echo, echo, output);
 		} else {
 		    html_write(request.get(0), "You asked for (" + request.get(0) + ")",output);
 		}
