@@ -120,7 +120,7 @@ public class GenericServer implements Runnable {
 					BufferedReader input = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
 					String input_text = input.readLine();
-					while (input_text != null) {
+					while (input_text != null && !Thread.currentThread().isInterrupted()) {
 						debug("Client said: \"" + input_text + "\"");
 						if (input_text.contains("GET"))
 							do_get(input_text, out);
@@ -143,5 +143,30 @@ public class GenericServer implements Runnable {
 				debug("IOException: " + ioe.getMessage());
 			}
 		}// while not interrupted
+	}
+	
+	public void stop_server()
+	{
+		if(this.listener != null && !this.listener.isClosed())
+		{
+			try{
+				this.listener.close();
+			}
+			catch(IOException ioe)
+			{
+				debug("Could not close socket listener: " + ioe.getMessage());
+			}
+		}
+		this.listener = null;
+	}
+	
+	public String get_address()
+	{
+		return this.listener.getLocalSocketAddress().toString();
+	}
+	
+	public String get_port()
+	{
+		return Integer.toString(this.listener.getLocalPort());
 	}
 }
