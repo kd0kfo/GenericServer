@@ -21,7 +21,7 @@ import org.json.simple.JSONObject;
 public class GenericServer implements Runnable {
 	int port = 4242;
 	private ServerSocket listener;
-    private String userdir = "/tmp";
+    private String userdir = null;
     
     private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
@@ -104,7 +104,9 @@ public class GenericServer implements Runnable {
 		    InputStreamReader file = null;
 		    String err = "";
 		    try{
-			if(request.get(1).length() != 0)
+			if(userdir == null)
+			    err = "User directory not defined.";
+			else if(request.get(1).length() != 0)
 			    file = new InputStreamReader(new FileInputStream(new File(userdir, request.get(1))));
 		    } catch(SecurityException se) {
 			    err = "Cannot read" + request.get(1);
@@ -196,6 +198,14 @@ public class GenericServer implements Runnable {
 				String addr = console.readLine("What address? ");
 				server_thread.interrupt();
 				serverd.stop_server();
+				try{
+				    server_thread.join();
+				} catch(InterruptedException ie) {
+				    cout.println("Error: " + ie.getMessage());
+				    break;
+				}
+				server_thread = null;
+				serverd = null;
 				serverd = new GenericServer(InetAddress.getByName(addr));
 				server_thread = new Thread(serverd);
 				server_thread.start();
