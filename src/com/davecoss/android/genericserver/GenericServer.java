@@ -7,10 +7,12 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
+import java.util.HashMap;
+import 	java.util.ArrayList;
+import 	java.util.Arrays;
 //import org.json.JSONArray;
 //import org.json.JSONException;
 //import org.json.JSONObject;
-import java.util.HashMap;
 
 public class GenericServer implements Runnable {
 	int port = 4242;
@@ -58,31 +60,37 @@ public class GenericServer implements Runnable {
 		if (tokens.length < 2)
 			return;
 
-		String request = tokens[1];
+		ArrayList<String> request = new ArrayList<String>(Arrays.asList(tokens[1].split("/")));
+		
 
-		if (request.length() >= 5 && request.substring(0, 5).equals("/date")) {
+		if(request.size() < 2)
+		    {
+			html_write("Welcome", "Welcome to the server.",output);
+			return;
+		    }
+		request.remove(0);
+		if (request.get(0).equals("date")) {
 			String date_string = "";
-			debug(request.substring(5));
-			if (request.substring(5).equals("/unixtime")) {
+			if (request.size() > 1 && request.get(1).equals("/unixtime")) {
 				long unixtime = System.currentTimeMillis() / 1000L;
 				date_string = Long.toString(unixtime);
 			} else {
 				date_string = (new Date()).toString();
 			}
-			if (request.contains("json")) {
+			if (request.size() > 2 && request.get(2).equals("json")) {
 				HashMap<String, String> map = new HashMap<String, String>();
 				map.put("date", date_string);
-				json_write(request, map, output);
+				json_write(request.get(0), map, output);
 			} else {
-				html_write(request, date_string, output);
+			    html_write(request.get(0), date_string, output);
 			}
-		} else if (request.equals("/favicon.ico")) {
+		} else if (request.get(0).equals("/favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
 			output.println("");
 			output.println(":-P");
 			output.println("");
 		} else {
-		    html_write(request, "You asked for (" + request + ")",output);
+		    html_write(request.get(0), "You asked for (" + request.get(0) + ")",output);
 		}
 
 	}
