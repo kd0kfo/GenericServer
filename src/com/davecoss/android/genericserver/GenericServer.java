@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
+import java.net.InetAddress;
 import java.util.Date;
 import java.util.HashMap;
 import 	java.util.ArrayList;
@@ -22,11 +23,20 @@ public class GenericServer implements Runnable {
 
 	public GenericServer() {
 		try {
-			listener = new ServerSocket(port);
+		    listener = new ServerSocket(port,0,InetAddress.getByName("127.0.0.1"));
 		} catch (IOException ioe) {
 			debug("IOException: " + ioe.getMessage());
 		}
 	}
+
+	public GenericServer(InetAddress addr) {
+		try {
+		    listener = new ServerSocket(port,0,addr);
+		} catch (IOException ioe) {
+			debug("IOException: " + ioe.getMessage());
+		}
+	}
+
 
         @SuppressWarnings("unchecked")
 	public static void json_write(String request,
@@ -97,7 +107,7 @@ public class GenericServer implements Runnable {
 	}
 
 	public static void debug(String msg) {
-		System.out.println(msg);
+	    System.out.println(msg);
 	}
 
 	public static void info(String msg) {
@@ -125,16 +135,30 @@ public class GenericServer implements Runnable {
 		GenericServer serverd = new GenericServer();
 		Thread server_thread = new Thread(serverd);
 		Console console = System.console();
+		PrintWriter cout = console.writer();
 		server_thread.start();
-		info("Server is running on port " + serverd.port);
+		info("Server is running on port " + serverd.get_port());
 
 		String input;
-		PrintWriter cout = console.writer();
 		while((input = console.readLine(">")) != null)
 		    {
 			if(input.equals("stop"))
 			    {
 				break;
+			    }
+			else if(input.equals("getaddr"))
+			    {
+				cout.println(serverd.get_address());
+			    }
+			else if(input.equals("setaddr"))
+			    {
+				String addr = console.readLine("What address? ");
+				server_thread.interrupt();
+				serverd.stop_server();
+				serverd = new GenericServer(InetAddress.getByName(addr));
+				server_thread = new Thread(serverd);
+				server_thread.start();
+				info("Server is running on port " + serverd.get_port());
 			    }
 			else
 			    {
@@ -204,7 +228,7 @@ public class GenericServer implements Runnable {
 	
 	public String get_address()
 	{
-		return this.listener.getLocalSocketAddress().toString();
+	    return this.listener.getInetAddress().toString();
 	}
 	
 	public String get_port()
