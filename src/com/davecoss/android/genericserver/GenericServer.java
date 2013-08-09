@@ -14,8 +14,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
-import 	java.util.ArrayList;
-import 	java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Arrays;
 import org.json.simple.JSONObject;
 
 public class GenericServer implements Runnable {
@@ -86,7 +86,7 @@ public class GenericServer implements Runnable {
 		request.remove(0);
 		if (request.get(0).equals("date")) {
 			String date_string = "";
-			if (request.size() > 1 && request.get(1).equals("/unixtime")) {
+			if (request.size() > 1 && request.get(1).equals("unixtime")) {
 				long unixtime = System.currentTimeMillis() / 1000L;
 				date_string = Long.toString(unixtime);
 			} else {
