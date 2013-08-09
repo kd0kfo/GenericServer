@@ -15,9 +15,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 public class Console extends Activity {
-	Handler text_updater;
-	private Thread serverd;
-	GenericServer server;
+    private ServerBundle server;
 	TextView txt_rx;
 
 	@Override
@@ -26,12 +24,11 @@ public class Console extends Activity {
 		setContentView(R.layout.activity_console);
 		txt_rx = (TextView)this.findViewById(R.id.txt_rx);
 		
-		text_updater = new Handler();
-		server = new GenericServer();
-		this.serverd = new Thread(server);
-		this.serverd.start();
+		server = new ServerBundle();
+
+		server.start_server(null);
 		
-		String msg = "Connected to ";
+		String msg = "IPs are ";
 		try{
 			for(Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics.hasMoreElements();)
 			{
@@ -61,17 +58,12 @@ public class Console extends Activity {
 
 	public void stop_server(View view)
 	{
-		if(this.serverd != null && this.serverd.isAlive())
-		{
-			this.serverd.interrupt();
-			this.server.stop_server();
-			try {
-				this.serverd.join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+	    try {
+		this.stop_server();
+	    } catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
 	}
 	
 }
