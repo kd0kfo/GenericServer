@@ -1,18 +1,22 @@
 package com.davecoss.android.genericserver;
 
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.Environment;
 import android.app.Activity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
-import java.util.List;
+
 
 public class Console extends Activity {
     private ServerBundle server;
@@ -22,14 +26,46 @@ public class Console extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_console);
-		txt_rx = (TextView)this.findViewById(R.id.txt_rx);
 		
 		server = new ServerBundle();
-
-		server.start_server(null);
+		this.start_server(null);
 		
-		String msg = "IPs are ";
+		
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.console, menu);
+		return true;
+	}
+
+	public void start_server(String address)
+	{
+		txt_rx = (TextView)this.findViewById(R.id.txt_rx);
+		String msg = "";
+		String status = "";
+		try
+		{
+			server.start_server(address);
+			msg = "IP is " + server.get_address();
+			status = "Status: Running";
+		}
+		catch(UnknownHostException nhe)
+		{
+			Log.e("Console", "Unknown Host: " + nhe.getMessage());
+			msg = "Could not start server: " + nhe.getMessage();
+			status = "Status: Failed";
+		}
+		catch(Exception e)
+		{
+			Log.e("Console", "Unknown Host: " + e.getMessage());
+			msg = "Could not start server: " + e.getMessage();
+			status = "Status: Failed";
+		}
+		
 		try{
+			msg += "\nKnown addresses: \n";
 			for(Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics.hasMoreElements();)
 			{
 				NetworkInterface nic = nics.nextElement();
@@ -45,25 +81,83 @@ public class Console extends Activity {
 			Log.e("Console", "Socket Exception: " + se.getMessage());
 			msg = "Could not get interface information.";
 		}
-		
 		txt_rx.setText(msg);
+		status_message(status);
 	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.console, menu);
-		return true;
-	}
-
+	
 	public void stop_server(View view)
 	{
 	    try {
-		this.stop_server();
+	    	if(this.server == null)
+	    		return;
+	    	this.server.stop_server();
+	    } catch(IOException ioe){
+	    	Log.e("Console.stop_server", "Error stoping server: " + ioe.getMessage());
 	    } catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+	    
+			Log.e("Console.stop_server", "Interrupted: " + e.getMessage());
 	    }
+	    status_message("Status: Stopped");
 	}
 	
+	public void setdir(View view)
+	{
+		ToggleButton tv = (ToggleButton) findViewById(R.id.btn_setdir);
+
+		// If not checked, set user directory to null.
+		// If is checked, set user directory to external storage directory
+		if(!tv.isChecked())
+		{
+			this.server.setdir(null);
+			return;
+		}
+		
+		boolean mExternalStorageAvailable = false;
+    	boolean mExternalStorageWriteable = false;
+    	String state = Environment.getExternalStorageState();
+    	
+    	if (Environment.MEDIA_MOUNTED.equals(state)) {
+    	    // We can read and write the media
+    	    mExternalStorageAvailable = mExternalStorageWriteable = true;
+    	} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+    	    // We can only read the media
+    	    mExternalStorageAvailable = true;
+    	    mExternalStorageWriteable = false;
+    	} else {
+    	    // Something else is wrong. It may be one of many other states, but all we need
+    	    //  to know is we can neither read nor write
+    	    mExternalStorageAvailable = mExternalStorageWriteable = false;
+    	}
+    	
+    	if(mExternalStorageAvailable && mExternalStorageWriteable)
+    	{
+    		File dir = getExternalFilesDir(null);
+    		if(!dir.exists())
+    		{
+    			if(!dir.mkdirs())
+    			{
+    				status_message("Could not make directory.");
+    				return;
+    			}
+    		}
+
+    		this.server.setdir(dir.getAbsolutePath());
+    	}
+	}
+	
+	private void status_message(String msg)
+	{
+		TextView status = (TextView)findViewById(R.id.txt_message);
+		status.setText(msg);
+	}
+	
+	public void setaddr(View view)
+	{
+		TextView txt_addr = (TextView)findViewById(R.id.txt_addr);
+		String addr = txt_addr.getText().toString().trim();
+		this.stop_server(view);
+		if(this.server == null)
+			this.server = new ServerBundle();
+		this.start_server(addr);
+	}
 }

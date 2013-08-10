@@ -11,7 +11,6 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -252,6 +251,5 @@ public class GenericServer implements Runnable {
 	    userdir = dir;
 	    return dir;
 	}
-
 
 }
