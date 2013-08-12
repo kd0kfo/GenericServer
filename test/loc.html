@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Location</title>
+<script language="javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script language="javascript">
+navigator.geolocation.getCurrentPosition(function(position){
+	var coords = position.coords;
+	$("#loc").text("Your coordinates are (" + coords.latitude + ", " + coords.longitude + ")");
+
+	});
+</script>
+</head>
+<body>
+<p id="loc"></p>
+</body>
+</html>
