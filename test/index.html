@@ -2,9 +2,20 @@
 <html>
 <head>
 <title>The Index</title>
+<script language="javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script language="javascript">
+$(window).load(function (){
+	$.ajax({url: "/echo/Echo%20Works%21", type: "GET", dataType: "html", success: function(html) {
+		var data = html.replace('<body', '<body><div id="jquerycannotgetbody"').replace('</body>', '</div></body>');
+		var body = $(data).filter("#jquerycannotgetbody");
+		$("#stuff").text(decodeURIComponent(body.text()));
+	}});
+});
+</script>
 </head>
 <body>
 <h2>It works!</h2>
 <p>Try seeing the <a href="/date">date</a> or the date in <a href="/date/unixtime">unixtime</a>.</p>
+<div id="stuff"></div>
 </body>
 </html>
