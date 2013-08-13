@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -18,26 +19,26 @@ import java.util.Arrays;
 import org.json.simple.JSONObject;
 
 public class GenericServer implements Runnable {
-	int port = 4242;
-	private ServerSocket listener;
+    private int port = 4242;
+    private ServerSocket listener;
     private String userdir = null;
+    private InetAddress addr;
     
     private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
 	public GenericServer() {
-		try {
-		    listener = new ServerSocket(port,0,InetAddress.getByName("127.0.0.1"));
-		} catch (IOException ioe) {
-			debug("IOException: " + ioe.getMessage());
+	    try{
+		this.addr = InetAddress.getByName("localhost");
+	    }
+	    catch(UnknownHostException une)
+		{
+		    debug("Unknown Host: localhost\n" + une.getMessage());
 		}
+	    start_server(this.addr, port);
 	}
 
-	public GenericServer(InetAddress addr) {
-		try {
-		    listener = new ServerSocket(port,0,addr);
-		} catch (IOException ioe) {
-			debug("IOException: " + ioe.getMessage());
-		}
+	public GenericServer(InetAddress new_addr) {
+	    start_server(new_addr, port);
 	}
 
 
@@ -189,6 +190,9 @@ public class GenericServer implements Runnable {
 
 	@Override
 	public void run() {
+	    if(listener == null)
+		start_server();
+
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
 				Socket socket = listener.accept();
@@ -227,6 +231,22 @@ public class GenericServer implements Runnable {
 			}
 		}// while not interrupted
 	}
+
+    private void start_server(InetAddress addr, int port)
+    {
+	this.addr = addr;
+	this.port = port;
+	start_server();
+    }
+
+    private void start_server()
+    {
+	try {
+	    listener = new ServerSocket(this.port,0,this.addr);
+	} catch (IOException ioe) {
+	    debug("IOException: " + ioe.getMessage());
+	}
+    }
 	
 	public void stop_server()
 	{
@@ -249,8 +269,10 @@ public class GenericServer implements Runnable {
 	}
 	
 	public String get_port()
-	{
-		return Integer.toString(this.listener.getLocalPort());
+        {
+	    if(this.listener == null)
+		return "";
+	    return Integer.toString(this.listener.getLocalPort());
 	}
 
     public String getdir(){return userdir;}
