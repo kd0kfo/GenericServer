@@ -48,7 +48,7 @@ public class GenericServer implements Runnable {
 	     JSONObject json_data = new JSONObject();
 	     json_data.put("content", json_content);
 	     output.println(STATUS_OK);
-	     output.println("Content-type: text/json");
+	     output.println("Content-type: application/json");
 	     output.println("");
 	     output.println(json_data.toString());
 	     output.println("");
@@ -146,7 +146,16 @@ public class GenericServer implements Runnable {
 		    String echo = "";
 		    if (request.size() > 1)
 			echo = request.get(1);
-		    html_write(echo, echo, output);
+		    if(request.get(request.size() - 1).equals("json"))
+			{
+			    HashMap<String, String> content = new HashMap<String, String>();
+			    content.put("data", echo);
+			    json_write(echo, content, output);
+			}
+		    else
+			{
+			    html_write(echo, echo, output);
+			}
 		} else {
 		    html_write(request.get(0), "You asked for (" + request.get(0) + ")",output);
 		}
