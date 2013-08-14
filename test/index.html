@@ -8,10 +8,10 @@ $(window).load(function (){
 	$.ajax({url: "/echo/Echo%20Works%21", type: "GET", dataType: "html", success: function(html) {
 		var data = html.replace('<body', '<body><div id="jquerycannotgetbody"').replace('</body>', '</div></body>');
 		var body = $(data).filter("#jquerycannotgetbody");
-		$("#stuff").html("<p>" + decodeURIComponent(body.text()) + "</p>");
+		$("#echo").html(decodeURIComponent(body.text()));
 	}});
 	$.ajax({url: "/echo/JSON%20Echo%20Works%21/json", type: "GET", dataType: "json", success: function(json){ 
-                $("#stuff").last("p").append("<p>" + decodeURIComponent(json.content.data) + "</p>");
+                $("#echojson").html(decodeURIComponent(json.content.data));
 	},
         error: function(xhr, status){alert(status);}});
 });
@@ -21,6 +21,7 @@ $(window).load(function (){
 <h2>It works!</h2>
 <p>Try seeing the <a href="/date">date</a> or the date in <a href="/date/unixtime">unixtime</a>.</p>
 <p>Here's an image <img src="test.jpg"/></p>
-<div id="stuff"></div>
+<p>Testing Echo ... <div id="echo"></div></p>
+<p>Testing Echo using JSON ... <div id="echojson"></div></p>
 </body>
 </html>
