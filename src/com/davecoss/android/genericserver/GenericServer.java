@@ -101,18 +101,19 @@ public class GenericServer implements Runnable {
 			}
 		} else if(request.get(0).equals("user") && request.size() > 1) {
 		    
+		    String filename = request.get(1);
 		    InputStreamReader file = null;
 		    String err = "";
 		    try{
 			if(userdir == null)
 			    err = "User directory not defined.";
-			else if(request.get(1).length() != 0)
+			else if(filename.length() != 0)
 			    file = new InputStreamReader(new FileInputStream(new File(userdir, request.get(1))));
 		    } catch(SecurityException se) {
-			    err = "Cannot read" + request.get(1);
+			    err = "Cannot read" + filename;
 			    file = null;
 		    } catch(FileNotFoundException fnfe) {
-			err = "File not found " + request.get(1);
+			err = "File not found " + filename;
 			file = null;
 		    }
 
@@ -124,7 +125,11 @@ public class GenericServer implements Runnable {
 		    char[] buffer = new char[4096];
 		    
 		    output.println(STATUS_OK);
-		    output.println("Content-type: text/html");
+		    // TODO: This is for testing. Replace with real/robust content type function.
+		    if(filename.contains(".jpg"))
+			output.println("Content-type: image/jpeg");
+		    else
+			output.println("Content-type: text/html");
 		    output.println("");
 		    try{
 			int nchars = -1;
