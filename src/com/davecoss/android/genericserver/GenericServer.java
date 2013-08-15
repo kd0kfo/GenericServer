@@ -208,9 +208,6 @@ public class GenericServer implements Runnable {
 
 	@Override
 	public void run() {
-	    if(listener == null)
-		start_server();
-
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
 				if(this.listener == null)
@@ -250,26 +247,10 @@ public class GenericServer implements Runnable {
 		}// while not interrupted
 	}
 
-    private void start_server(InetAddress addr, int port)
-    {
-	this.addr = addr;
-	this.port = port;
-	start_server();
-    }
-
-    private void start_server()
-    {
-	try {
-	    listener = new ServerSocket(this.port,0,this.addr);
-	} catch (IOException ioe) {
-	    debug("IOException: " + ioe.getMessage());
-	}
-    }
-	
 	private void start_server() throws IOException
 	{
 		try {
-		    listener = new ServerSocket(port,0,addr);
+		    listener = new ServerSocket(this.port,0,this.addr);
 		} catch (IOException ioe) {
 			debug("IOException: " + ioe.getMessage());
 		}
