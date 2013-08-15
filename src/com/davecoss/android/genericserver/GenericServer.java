@@ -3,7 +3,9 @@ package com.davecoss.android.genericserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,12 +23,13 @@ public class GenericServer implements Runnable {
 	int port = 4242;
 	private ServerSocket listener;
     private String userdir = null;
+    private InetAddress addr = null;
     
     private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
 	public GenericServer() {
 		try {
-		    listener = new ServerSocket(port,0,InetAddress.getByName("127.0.0.1"));
+		    start_server(InetAddress.getByName("localhost"),this.port);
 		} catch (IOException ioe) {
 			debug("IOException: " + ioe.getMessage());
 		}
@@ -34,7 +37,7 @@ public class GenericServer implements Runnable {
 
 	public GenericServer(InetAddress addr) {
 		try {
-		    listener = new ServerSocket(port,0,addr);
+		    start_server(addr,this.port);
 		} catch (IOException ioe) {
 			debug("IOException: " + ioe.getMessage());
 		}
@@ -52,6 +55,7 @@ public class GenericServer implements Runnable {
 	     output.println("");
 	     output.println(json_data.toString());
 	     output.println("");
+	     output.flush();
 	    
 	}
 
@@ -60,6 +64,7 @@ public class GenericServer implements Runnable {
 	print_header(output, title, status);
 	output.println(content);
 	print_footer(output);
+	output.flush();
     }
     
     public static void html_write(String title, String content, 
@@ -67,9 +72,11 @@ public class GenericServer implements Runnable {
 	print_header(output, title, STATUS_OK);
 	output.println(content);
 	print_footer(output);
+		output.flush();
     }
 
-	public void do_get(String input, PrintWriter output) {
+	public void do_get(String input, OutputStream raw_output) {
+		PrintWriter output = new PrintWriter(raw_output);
 		String[] tokens = input.split(" ");
 		if (tokens.length < 2)
 			return;
@@ -101,13 +108,13 @@ public class GenericServer implements Runnable {
 		} else if(request.get(0).equals("user") && request.size() > 1) {
 		    
 		    String filename = request.get(1);
-		    InputStreamReader file = null;
+		    BufferedInputStream file = null;
 		    String err = "";
 		    try{
 			if(userdir == null)
 			    err = "User directory not defined.";
 			else if(filename.length() != 0)
-			    file = new InputStreamReader(new FileInputStream(new File(userdir, request.get(1))));
+			    file = new BufferedInputStream(new FileInputStream(new File(userdir, request.get(1))));
 		    } catch(SecurityException se) {
 			    err = "Cannot read" + filename;
 			    file = null;
@@ -121,21 +128,23 @@ public class GenericServer implements Runnable {
 			    html_write("File error", err, "HTTP/1.1 401 Permission Denied", output);
 			    return;
 			}
-		    char[] buffer = new char[4096];
+		    byte[] buffer = new byte[4096];
 		    
 		    output.println(STATUS_OK);
 		    // TODO: This is for testing. Replace with real/robust content type function.
 		    if(filename.contains(".jpg"))
-			output.println("Content-type: image/jpeg");
+		    	output.println("Content-type: image/jpeg");
 		    else
-			output.println("Content-type: text/html");
+		    	output.println("Content-type: text/html");
 		    output.println("");
+		    output.flush();
 		    try{
 			int nchars = -1;
 			while((nchars = file.read(buffer, 0, buffer.length)) != -1)
 			    {
-				output.write(buffer, 0, nchars);
+				raw_output.write(buffer, 0, nchars);
 			    }
+				raw_output.flush();
 		    } catch(IOException ioe) {
 			output.println("Error reading file: " + ioe.getMessage());
 		    }
@@ -164,6 +173,8 @@ public class GenericServer implements Runnable {
 		} else {
 		    html_write(request.get(0), "You asked for (" + request.get(0) + ")",output);
 		}
+		
+		output.flush();
 
 	}
 
@@ -196,13 +207,13 @@ public class GenericServer implements Runnable {
 	public void run() {
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
+				if(this.listener == null)
+					start_server();
 				Socket socket = listener.accept();
 				debug("Opened socket on port " + port);
 				try {
-					PrintWriter out = new PrintWriter(socket.getOutputStream(),
-							true);
-					BufferedReader input = new BufferedReader(
-							new InputStreamReader(socket.getInputStream()));
+					OutputStream out = socket.getOutputStream();
+					BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 					String input_text = input.readLine();
 					while (input_text != null && !Thread.currentThread().isInterrupted()) {
 						debug("Client said: \"" + input_text + "\"");
@@ -231,6 +242,22 @@ public class GenericServer implements Runnable {
 				debug("IOException: " + ioe.getMessage());
 			}
 		}// while not interrupted
+	}
+	
+	private void start_server() throws IOException
+	{
+		try {
+		    listener = new ServerSocket(port,0,addr);
+		} catch (IOException ioe) {
+			debug("IOException: " + ioe.getMessage());
+		}
+	}
+	
+	private void start_server(InetAddress addr, int port) throws IOException
+	{
+		this.port = port;
+		this.addr = addr;
+		start_server();
 	}
 	
 	public void stop_server()
