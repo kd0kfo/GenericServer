@@ -21,6 +21,11 @@ import java.util.Arrays;
 import org.json.simple.JSONObject;
 
 public class GenericServer implements Runnable {
+
+    public enum FileType {
+	HTML, TEXT, JSON, JPEG
+    }
+    
     private int port = 4242;
     private ServerSocket listener;
     private String userdir = null;
@@ -111,6 +116,7 @@ public class GenericServer implements Runnable {
 		} else if(request.get(0).equals("user") && request.size() > 1) {
 		    
 		    String filename = request.get(1);
+		    FileType filetype = filetype_by_extension(filename);
 		    BufferedInputStream file = null;
 		    String err = "";
 		    try{
@@ -134,11 +140,12 @@ public class GenericServer implements Runnable {
 		    byte[] buffer = new byte[4096];
 		    
 		    output.println(STATUS_OK);
-		    // TODO: This is for testing. Replace with real/robust content type function.
-		    if(filename.contains(".jpg"))
+		    if(filetype == FileType.JPEG)
 		    	output.println("Content-type: image/jpeg");
-		    else
+		    else if(filetype == FileType.HTML)
 		    	output.println("Content-type: text/html");
+		    else
+			output.println("Content-type: text/plain");
 		    output.println("");
 		    output.flush();
 		    try{
@@ -297,5 +304,25 @@ public class GenericServer implements Runnable {
 	    userdir = dir;
 	    return dir;
 	}
+
+
+    public FileType filetype_by_extension(String filename)
+    {
+	if(!filename.contains("."))
+	    return FileType.HTML;
+
+	String extension = filename.substring(filename.lastIndexOf(".")+1);
+	if(extension.length() > 0)
+	    {
+		extension = extension.toLowerCase();
+		if(extension.equals("jpg"))
+		    return FileType.JPEG;
+		else if(extension.equals("json"))
+		    return FileType.JSON;
+		else if(extension.equals("html") || extension.equals("htm"))
+		    return FileType.HTML;
+	    }
+	return FileType.TEXT;
+    }
 
 }
