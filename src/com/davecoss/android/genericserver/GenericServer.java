@@ -315,7 +315,7 @@ public class GenericServer implements Runnable {
 	if(extension.length() > 0)
 	    {
 		extension = extension.toLowerCase();
-		if(extension.equals("jpg"))
+		if(extension.equals("jpg") || extension.equals("jpeg"))
 		    return FileType.JPEG;
 		else if(extension.equals("json"))
 		    return FileType.JSON;
