@@ -55,6 +55,13 @@ public class Standalone {
 				String dir = console.readLine("What directory? ");
 				server.setdir(dir);
 			    }
+			else if(input.equals("status"))
+			    {
+				if(server == null || !server.is_running())
+				    cout.println("Closed");
+				else
+				    cout.println("Listening on " + server.get_address() + ":" + server.get_port());
+			    }
 			else
 			    {
 				cout.println("Unknown: " + input);
