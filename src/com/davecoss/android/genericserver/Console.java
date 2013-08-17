@@ -19,7 +19,7 @@ import java.util.Enumeration;
 
 
 public class Console extends Activity {
-    private ServerBundle server;
+    private ServerBundle server = null;
 	TextView txt_rx;
 
 	@Override
@@ -27,11 +27,33 @@ public class Console extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_console);
 		
-		server = new ServerBundle();
-		this.start_server(null);
+		if(this.server == null)
+			server = new ServerBundle();
+		if(!this.server.is_running())
+			this.start_server(null);
 		
 		
 	}
+	
+	@Override
+	protected void onDestroy()
+	{
+		super.onDestroy();
+		if(this.server != null)
+		{
+			try
+			{
+				this.stop_server();
+			}
+			catch(Exception e)
+			{
+				Log.e("Console.onDestroy", "Error stopping server: " + e.getMessage());
+			}
+		}
+
+		this.server = null;		
+	}
+	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -86,6 +108,11 @@ public class Console extends Activity {
 	}
 	
 	public void stop_server(View view)
+	{
+		this.stop_server();
+	}
+	
+	public void stop_server()
 	{
 	    try {
 	    	if(this.server == null)

@@ -73,6 +73,13 @@ public class ServerBundle
 	server_thread = new Thread(serverd);
 	server_thread.start();
     }
+    
+    public boolean is_running()
+    {
+    	if(this.serverd == null)
+    		return false;
+    	return this.serverd.is_running();
+    }
 
 }
 

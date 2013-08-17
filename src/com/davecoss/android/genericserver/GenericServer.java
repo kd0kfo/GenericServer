@@ -324,5 +324,10 @@ public class GenericServer implements Runnable {
 	    }
 	return FileType.TEXT;
     }
+    
+    public boolean is_running()
+    {
+    	return (this.listener != null && !this.listener.isClosed());
+    }
 
 }
