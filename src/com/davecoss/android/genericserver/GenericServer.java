@@ -82,14 +82,14 @@ public class GenericServer implements Runnable {
 		output.flush();
 	}
 
-	public void do_get(String input, OutputStream raw_output) {
+	public void do_get(HTTPRequest client_request, OutputStream raw_output) {
 		PrintWriter output = new PrintWriter(raw_output);
-		String[] tokens = input.split(" ");
-		if (tokens.length < 2)
+		String uri = client_request.get_uri();
+		if (uri == null)
 			return;
 
 		ArrayList<String> request = new ArrayList<String>(
-				Arrays.asList(tokens[1].split("/")));
+				Arrays.asList(uri.split("/")));
 
 		if (request.size() < 2) {
 			html_write("Welcome", "Welcome to the server.", output);
@@ -183,6 +183,11 @@ public class GenericServer implements Runnable {
 
 	}
 
+	public static void error(String msg)
+	{
+		System.err.println(msg);
+	}
+	
 	public static void debug(String msg) {
 		System.out.println(msg);
 	}
@@ -222,21 +227,47 @@ public class GenericServer implements Runnable {
 					BufferedReader input = new BufferedReader(
 							new InputStreamReader(socket.getInputStream()));
 					String input_text = input.readLine();
+					HTTPRequest request = null;
 					while (input_text != null
 							&& !Thread.currentThread().isInterrupted()) {
-						debug("Client said: \"" + input_text + "\"");
 						if (input_text.contains("GET"))
-							do_get(input_text, out);
+						{
+							String[] request_tokens = input_text.split(" ");
+							if(request_tokens.length < 2)
+							{
+								debug("Invalid Request String Length: " + input_text);
+							}
+							else
+							{
+								request = new HTTPRequest("GET", request_tokens[1]);
+							}
+						}
+						else if(request != null && input_text.length() != 0)
+						{
+							try
+							{
+								request.put_request_data(input_text);
+							}
+							catch(HTTPRequest.InvalidRequestData ird)
+							{
+								error("do_get: " + ird);
+							}
+						}
 						out.flush();
 
 						if (input_text.length() == 0) {
-							debug("EOF");
+							if(request != null)
+							{
+								debug("Received Request");
+								debug(request.toString()); 
+							}
 							break;
 						}
 						input_text = input.readLine();
 						if (input_text == "")
 							debug("Empty string");
 					}
+					do_get(request, out);
 				} finally {
 					debug("Closing socket");
 					socket.close();
