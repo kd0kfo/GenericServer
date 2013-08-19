@@ -17,9 +17,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Locale;
 
+
 import org.json.simple.JSONObject;
+
 
 public class GenericServer implements Runnable {
 
@@ -82,8 +85,11 @@ public class GenericServer implements Runnable {
 		output.flush();
 	}
 
-	public void do_get(HTTPRequest client_request, OutputStream raw_output) {
+	public void process_request(HTTPRequest client_request, OutputStream raw_output) 
+			throws EmptyRequest{
 		PrintWriter output = new PrintWriter(raw_output);
+		if(client_request == null)
+			throw new EmptyRequest();
 		String uri = client_request.get_uri();
 		if (uri == null)
 			return;
@@ -170,9 +176,31 @@ public class GenericServer implements Runnable {
 			if (request.get(request.size() - 1).equals("json")) {
 				HashMap<String, String> content = new HashMap<String, String>();
 				content.put("data", echo);
+				if(client_request.has_post_data())
+				{
+					HashMap<String, String> post_data = client_request.get_full_post_data();
+					content.putAll(post_data);
+				}
 				json_write(echo, content, output);
+				
 			} else {
-				html_write(echo, echo, output);
+				if(!client_request.has_post_data())
+				{
+					html_write(echo, echo, output);
+				}
+				else
+				{
+					HashMap<String, String> post_data = client_request.get_full_post_data();
+					Iterator<String> it = post_data.keySet().iterator();
+					String post_string = "";
+					String key;
+					while(it.hasNext())
+					{
+						key = it.next();
+						post_string += key + "=" + post_data.get(key) + "\n";
+					}
+					html_write(echo, echo + "\nPOST:\n" + post_string, output);
+				}
 			}
 		} else {
 			html_write(request.get(0),
@@ -230,32 +258,32 @@ public class GenericServer implements Runnable {
 					HTTPRequest request = null;
 					while (input_text != null
 							&& !Thread.currentThread().isInterrupted()) {
-						if (input_text.contains("GET"))
+						debug("Client Said: " + input_text);
+						String[] request_tokens = input_text.split(" ");
+						int request_data_len = input_text.length();
+						if(request_data_len > 0 && request_tokens.length < 2)
 						{
-							String[] request_tokens = input_text.split(" ");
-							if(request_tokens.length < 2)
-							{
-								debug("Invalid Request String Length: " + input_text);
-							}
-							else
-							{
-								request = new HTTPRequest("GET", request_tokens[1]);
-							}
+							debug("Invalid Request String Length: " + input_text);
 						}
-						else if(request != null && input_text.length() != 0)
+						else if (request_tokens[0].equals("GET") || request_tokens[0].equals("POST"))
+						{
+							debug("Receiving " + request_tokens[0]);
+							request = new HTTPRequest(request_tokens[0], request_tokens[1]);
+						}
+						else if(request != null && request_data_len != 0)
 						{
 							try
 							{
 								request.put_request_data(input_text);
 							}
-							catch(HTTPRequest.InvalidRequestData ird)
+							catch(InvalidRequestData ird)
 							{
-								error("do_get: " + ird);
+								error("Invalid Data from Client: " + ird);
 							}
 						}
 						out.flush();
 
-						if (input_text.length() == 0) {
+						if (request_data_len == 0) {
 							if(request != null)
 							{
 								debug("Received Request");
@@ -267,7 +295,34 @@ public class GenericServer implements Runnable {
 						if (input_text == "")
 							debug("Empty string");
 					}
-					do_get(request, out);
+					try{
+						if(request != null && request.get_type() == HTTPRequest.RequestType.POST)
+						{
+							String len_as_str = request.get_request_data("Content-Length");
+							if(len_as_str != null)
+							{
+								try
+								{
+									int post_len = Integer.parseInt(len_as_str);
+									char[] buffer = new char[post_len];
+									input.read(buffer, 0, post_len);
+									String post_data = new String(buffer);
+									debug("POST Data: " + post_data);
+									request.put_post_data(post_data);
+								}
+								catch(NumberFormatException nfe)
+								{
+									error("Invalid Content-Length: " + len_as_str);
+									error(nfe.getMessage());
+								}
+							}
+						}
+						process_request(request, out);
+					}
+					catch(HTTPError httperr)
+					{
+						error("HTTP ERROR: " + httperr);
+					}
 				} finally {
 					debug("Closing socket");
 					socket.close();
