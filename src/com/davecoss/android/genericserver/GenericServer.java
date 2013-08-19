@@ -106,105 +106,16 @@ public class GenericServer implements Runnable {
 		}
 		request.remove(0);
 		if (request.get(0).equals("date")) {
-			String date_string = "";
-			if (request.size() > 1 && request.get(1).equals("unixtime")) {
-				long unixtime = System.currentTimeMillis() / 1000L;
-				date_string = Long.toString(unixtime);
-			} else {
-				date_string = (new Date()).toString();
-			}
-			if (request.get(request.size() - 1).equals("json")) {
-				HashMap<String, String> map = new HashMap<String, String>();
-				map.put("date", date_string);
-				json_write(request.get(0), map, output);
-			} else {
-				html_write(request.get(0), date_string, output);
-			}
+			send_date(request, output);
 		} else if (request.get(0).equals("user") && request.size() > 1) {
-
-			String filename = request.get(1);
-			FileType filetype = filetype_by_extension(filename);
-			BufferedInputStream file = null;
-			String err = "";
-			try {
-				if (userdir == null)
-					err = "User directory not defined.";
-				else if (filename.length() != 0)
-					file = new BufferedInputStream(new FileInputStream(
-							new File(userdir, request.get(1))));
-			} catch (SecurityException se) {
-				err = "Cannot read" + filename;
-				file = null;
-			} catch (FileNotFoundException fnfe) {
-				err = "File not found " + filename;
-				file = null;
-			}
-
-			if (file == null) {
-				html_write("File error", err, "HTTP/1.1 401 Permission Denied",
-						output);
-				return;
-			}
-			byte[] buffer = new byte[4096];
-
-			output.println(STATUS_OK);
-			if (filetype == FileType.JPEG)
-				output.println("Content-type: image/jpeg");
-			else if (filetype == FileType.HTML)
-				output.println("Content-type: text/html");
-			else
-				output.println("Content-type: text/plain");
-			output.println("");
-			output.flush();
-			try {
-				int nchars = -1;
-				while ((nchars = file.read(buffer, 0, buffer.length)) != -1) {
-					raw_output.write(buffer, 0, nchars);
-				}
-				raw_output.flush();
-			} catch (IOException ioe) {
-				output.println("Error reading file: " + ioe.getMessage());
-			}
-			output.println("");
-			output.flush();
+			process_user_request(request, raw_output);	
 		} else if (request.get(0).equals("favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
 			output.println("");
 			output.println(":-P");
 			output.println("");
 		} else if (request.get(0).equals("echo")) {
-			String echo = "";
-			if (request.size() > 1)
-				echo = request.get(1);
-			if (request.get(request.size() - 1).equals("json")) {
-				HashMap<String, String> content = new HashMap<String, String>();
-				content.put("data", echo);
-				if(client_request.has_post_data())
-				{
-					HashMap<String, String> post_data = client_request.get_full_post_data();
-					content.putAll(post_data);
-				}
-				json_write(echo, content, output);
-				
-			} else {
-				if(!client_request.has_post_data())
-				{
-					html_write(echo, echo, output);
-				}
-				else
-				{
-					HashMap<String, String> post_data = client_request.get_full_post_data();
-					Iterator<String> it = post_data.keySet().iterator();
-					String post_string = "";
-					String key;
-					while(it.hasNext())
-					{
-						key = it.next();
-						post_string += key + "=" + post_data.get(key) + "\n";
-					}
-					html_write(echo, echo + "\nPOST:\n" + post_string, output);
-				}
-			}
+			process_echo(client_request, request, output);
 		} else {
 			html_write(request.get(0),
 					"You asked for (" + request.get(0) + ")", output);
@@ -391,4 +302,104 @@ public class GenericServer implements Runnable {
 		return (this.listener != null && !this.listener.isClosed());
 	}
 
+	private void send_date(ArrayList<String> request, PrintWriter output){
+		String date_string = "";
+		if (request.size() > 1 && request.get(1).equals("unixtime")) {
+			long unixtime = System.currentTimeMillis() / 1000L;
+			date_string = Long.toString(unixtime);
+		} else {
+			date_string = (new Date()).toString();
+		}
+		if (request.get(request.size() - 1).equals("json")) {
+			HashMap<String, String> map = new HashMap<String, String>();
+			map.put("date", date_string);
+			json_write(request.get(0), map, output);
+		} else {
+			html_write(request.get(0), date_string, output);
+		}
+	}
+
+	private void process_user_request(ArrayList<String> request, OutputStream raw_output) {
+		PrintWriter output = new PrintWriter(raw_output);
+		String filename = request.get(1);
+		FileType filetype = filetype_by_extension(filename);
+		BufferedInputStream file = null;
+		String err = "";
+		try {
+			if (userdir == null)
+				err = "User directory not defined.";
+			else if (filename.length() != 0)
+				file = new BufferedInputStream(new FileInputStream(
+						new File(userdir, request.get(1))));
+		} catch (SecurityException se) {
+			err = "Cannot read" + filename;
+			file = null;
+		} catch (FileNotFoundException fnfe) {
+			err = "File not found " + filename;
+			file = null;
+		}
+
+		if (file == null) {
+			html_write("File error", err, "HTTP/1.1 401 Permission Denied",
+					output);
+			return;
+		}
+		byte[] buffer = new byte[4096];
+
+		output.println(STATUS_OK);
+		if (filetype == FileType.JPEG)
+			output.println("Content-type: image/jpeg");
+		else if (filetype == FileType.HTML)
+			output.println("Content-type: text/html");
+		else
+			output.println("Content-type: text/plain");
+		output.println("");
+		output.flush();
+		try {
+			int nchars = -1;
+			while ((nchars = file.read(buffer, 0, buffer.length)) != -1) {
+				raw_output.write(buffer, 0, nchars);
+			}
+			raw_output.flush();
+		} catch (IOException ioe) {
+			output.println("Error reading file: " + ioe.getMessage());
+		}
+		output.println("");
+		output.flush();
+	}
+
+	private void process_echo(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) {
+		String echo = "";
+		if (request.size() > 1)
+			echo = request.get(1);
+		if (request.get(request.size() - 1).equals("json")) {
+			HashMap<String, String> content = new HashMap<String, String>();
+			content.put("data", echo);
+			if(client_request.has_post_data())
+			{
+				HashMap<String, String> post_data = client_request.get_full_post_data();
+				content.putAll(post_data);
+			}
+			json_write(echo, content, output);
+			
+		} else {
+			if(!client_request.has_post_data())
+			{
+				html_write(echo, echo, output);
+			}
+			else
+			{
+				HashMap<String, String> post_data = client_request.get_full_post_data();
+				Iterator<String> it = post_data.keySet().iterator();
+				String post_string = "";
+				String key;
+				while(it.hasNext())
+				{
+					key = it.next();
+					post_string += key + "=" + post_data.get(key) + "\n";
+				}
+				html_write(echo, echo + "\nPOST:\n" + post_string, output);
+			}
+		}
+	}
 }
