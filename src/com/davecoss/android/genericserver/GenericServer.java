@@ -34,23 +34,26 @@ public class GenericServer implements Runnable {
 	private ServerSocket listener;
 	private String userdir = null;
 	private InetAddress addr = null;
+	private ServerHandler handler;
 
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 
-	public GenericServer() {
+	public GenericServer(ServerHandler handler) {
+		this.handler = handler;
 		try {
 			start_server(InetAddress.getByName("localhost"), this.port);
 		} catch (IOException ioe) {
-			debug("IOException: " + ioe.getMessage());
+			handler.debug("GenericServer", "IOException: " + ioe.getMessage());
 
 		}
 	}
 
-	public GenericServer(InetAddress addr) {
+	public GenericServer(InetAddress addr, ServerHandler handler) {
+		this.handler = handler;
 		try {
 			start_server(addr, this.port);
 		} catch (IOException ioe) {
-			debug("IOException: " + ioe.getMessage());
+			handler.debug("GenericServer", "IOException: " + ioe.getMessage());
 		}
 	}
 
@@ -211,19 +214,6 @@ public class GenericServer implements Runnable {
 
 	}
 
-	public static void error(String msg)
-	{
-		System.err.println(msg);
-	}
-	
-	public static void debug(String msg) {
-		System.out.println(msg);
-	}
-
-	public static void info(String msg) {
-		System.out.println(msg);
-	}
-
 	public static void print_header(PrintWriter output, String request,
 			String status) {
 		output.println(status);
@@ -249,7 +239,7 @@ public class GenericServer implements Runnable {
 				if (this.listener == null)
 					start_server();
 				Socket socket = listener.accept();
-				debug("Opened socket on port " + port);
+				handler.debug("GenericServer.run", "Opened socket on port " + port);
 				try {
 					OutputStream out = socket.getOutputStream();
 					BufferedReader input = new BufferedReader(
@@ -258,16 +248,16 @@ public class GenericServer implements Runnable {
 					HTTPRequest request = null;
 					while (input_text != null
 							&& !Thread.currentThread().isInterrupted()) {
-						debug("Client Said: " + input_text);
+						handler.debug("GenericServer.run", "Client Said: " + input_text);
 						String[] request_tokens = input_text.split(" ");
 						int request_data_len = input_text.length();
 						if(request_data_len > 0 && request_tokens.length < 2)
 						{
-							debug("Invalid Request String Length: " + input_text);
+							handler.debug("GenericServer.run", "Invalid Request String Length: " + input_text);
 						}
 						else if (request_tokens[0].equals("GET") || request_tokens[0].equals("POST"))
 						{
-							debug("Receiving " + request_tokens[0]);
+							handler.debug("GenericServer.run", "Receiving " + request_tokens[0]);
 							request = new HTTPRequest(request_tokens[0], request_tokens[1]);
 						}
 						else if(request != null && request_data_len != 0)
@@ -278,7 +268,7 @@ public class GenericServer implements Runnable {
 							}
 							catch(InvalidRequestData ird)
 							{
-								error("Invalid Data from Client: " + ird);
+								handler.error("GenericServer.run", "Invalid Data from Client: " + ird);
 							}
 						}
 						out.flush();
@@ -286,14 +276,14 @@ public class GenericServer implements Runnable {
 						if (request_data_len == 0) {
 							if(request != null)
 							{
-								debug("Received Request");
-								debug(request.toString()); 
+								handler.debug("GenericServer.run", "Received Request");
+								handler.debug("GenericServer.run", request.toString()); 
 							}
 							break;
 						}
 						input_text = input.readLine();
 						if (input_text == "")
-							debug("Empty string");
+							handler.debug("GenericServer.run", "Empty string");
 					}
 					try{
 						if(request != null && request.get_type() == HTTPRequest.RequestType.POST)
@@ -307,13 +297,13 @@ public class GenericServer implements Runnable {
 									char[] buffer = new char[post_len];
 									input.read(buffer, 0, post_len);
 									String post_data = new String(buffer);
-									debug("POST Data: " + post_data);
+									handler.debug("GenericServer.run", "POST Data: " + post_data);
 									request.put_post_data(post_data);
 								}
 								catch(NumberFormatException nfe)
 								{
-									error("Invalid Content-Length: " + len_as_str);
-									error(nfe.getMessage());
+									handler.error("GenericServer.run", "Invalid Content-Length: " + len_as_str);
+									handler.error("GenericServer.run", nfe.getMessage());
 								}
 							}
 						}
@@ -321,17 +311,17 @@ public class GenericServer implements Runnable {
 					}
 					catch(HTTPError httperr)
 					{
-						error("HTTP ERROR: " + httperr);
+						handler.error("GenericServer.run", "HTTP ERROR: " + httperr);
 					}
 				} finally {
-					debug("Closing socket");
+					handler.debug("GenericServer.run", "Closing socket");
 					socket.close();
-					debug("Socket closed");
+					handler.debug("GenericServer.run", "Socket closed");
 				}
 			} catch (SocketException se) {
-				debug("Socket closed");
+				handler.debug("GenericServer.run", "Socket closed");
 			} catch (IOException ioe) {
-				debug("IOException: " + ioe.getMessage());
+				handler.debug("GenericServer.run", "IOException: " + ioe.getMessage());
 			}
 		}// while not interrupted
 	}
@@ -340,7 +330,7 @@ public class GenericServer implements Runnable {
 		try {
 			listener = new ServerSocket(this.port, 0, this.addr);
 		} catch (IOException ioe) {
-			debug("IOException: " + ioe.getMessage());
+			handler.debug("GenericServer.start_server", "IOException: " + ioe.getMessage());
 		}
 	}
 
@@ -355,7 +345,7 @@ public class GenericServer implements Runnable {
 			try {
 				this.listener.close();
 			} catch (IOException ioe) {
-				debug("Could not close socket listener: " + ioe.getMessage());
+				handler.debug("GenericServer.stop_server", "Could not close socket listener: " + ioe.getMessage());
 			}
 		}
 		this.listener = null;

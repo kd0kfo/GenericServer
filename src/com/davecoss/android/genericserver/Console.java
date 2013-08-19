@@ -20,6 +20,7 @@ import java.util.Enumeration;
 
 public class Console extends Activity {
     private ServerBundle server = null;
+    private AndroidHandler handler;
 	TextView txt_rx;
 
 	@Override
@@ -27,8 +28,9 @@ public class Console extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_console);
 		
+		handler = new AndroidHandler();
 		if(this.server == null)
-			server = new ServerBundle();
+			server = new ServerBundle(handler);
 		if(!this.server.is_running())
 			this.start_server(null);
 		
@@ -184,7 +186,25 @@ public class Console extends Activity {
 		String addr = txt_addr.getText().toString().trim();
 		this.stop_server(view);
 		if(this.server == null)
-			this.server = new ServerBundle();
+			this.server = new ServerBundle(handler);
 		this.start_server(addr);
+	}
+	
+	public class AndroidHandler implements ServerHandler
+	{
+		public void error(String tag, String msg)
+		{
+			Log.e(tag, msg);
+		}
+		
+		public void debug(String tag, String msg)
+		{
+			Log.d(tag, msg);
+		}
+		
+		public void info(String tag, String msg)
+		{
+			Log.i(tag, msg);
+		}
 	}
 }

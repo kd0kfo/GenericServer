@@ -8,7 +8,8 @@ import java.io.IOException;
 public class Standalone {
 
 	public static void main(String[] args) throws IOException {
-		ServerBundle server = new ServerBundle();
+		StandaloneHandler handler = new Standalone().new StandaloneHandler();
+		ServerBundle server = new ServerBundle(handler);
 		Console console = System.console();
 		PrintWriter cout = console.writer();
 
@@ -44,6 +45,12 @@ public class Standalone {
 			} else if (input.equals("setdir")) {
 				String dir = console.readLine("What directory? ");
 				server.setdir(dir);
+			} else if (input.equals("debug")) { 
+				handler.verbosity = 1;
+			} else if (input.equals("info")) { 
+				handler.verbosity = 2;
+			} else if (input.equals("error")) { 
+				handler.verbosity = 0;
 			} else if (input.equals("status")) {
 				if (server == null || !server.is_running())
 					cout.println("Closed");
@@ -62,4 +69,33 @@ public class Standalone {
 		}
 	}
 
+	public class StandaloneHandler implements ServerHandler
+	{
+		public int verbosity = 2;
+		
+		public StandaloneHandler()
+		{
+			
+		}
+		
+		public StandaloneHandler(int verbosity)
+		{
+			verbosity = verbosity;
+		}
+		
+		public void error(String tag, String msg)
+		{
+			System.err.println(tag + ": " + msg);
+		}
+		
+		public void debug(String tag, String msg) {
+			if(verbosity >= 1)
+				System.out.println(tag + ": " + msg);
+		}
+
+		public void info(String tag, String msg) {
+			if(verbosity >= 2)
+				System.out.println(tag + ": " + msg);
+		}
+	}
 }
