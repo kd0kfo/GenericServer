@@ -18,17 +18,12 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Locale;
 
 
 import org.json.simple.JSONObject;
 
 
 public class GenericServer implements Runnable {
-
-	public enum FileType {
-		HTML, TEXT, JSON, JPEG
-	}
 
 	private int port = 4242;
 	private ServerSocket listener;
@@ -37,6 +32,7 @@ public class GenericServer implements Runnable {
 	private ServerHandler handler;
 
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
+	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
 
 	public GenericServer(ServerHandler handler) {
 		this.handler = handler;
@@ -108,7 +104,13 @@ public class GenericServer implements Runnable {
 		if (request.get(0).equals("date")) {
 			send_date(request, output);
 		} else if (request.get(0).equals("user") && request.size() > 1) {
-			process_user_request(request, raw_output);	
+			try {
+				process_user_request(request, raw_output);	
+			}
+			catch(HTTPError httpe)
+			{
+				html_write("Error processing user request", "Error Processing user request: " + httpe.getMessage(), STATUS_ERROR, output);
+			}
 		} else if (request.get(0).equals("favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
 			output.println("");
@@ -116,6 +118,14 @@ public class GenericServer implements Runnable {
 			output.println("");
 		} else if (request.get(0).equals("echo")) {
 			process_echo(client_request, request, output);
+		} else if (request.get(0).equals("file")) {
+			try {
+				process_file(client_request, request, output);
+			}
+			catch(HTTPError httpe)
+			{
+				html_write("Error processing file", "Error Processing File: " + httpe.getMessage(), STATUS_ERROR, output);
+			}
 		} else {
 			html_write(request.get(0),
 					"You asked for (" + request.get(0) + ")", output);
@@ -281,23 +291,6 @@ public class GenericServer implements Runnable {
 		return dir;
 	}
 
-	public FileType filetype_by_extension(String filename) {
-		if (!filename.contains("."))
-			return FileType.HTML;
-
-		String extension = filename.substring(filename.lastIndexOf(".") + 1);
-		if (extension.length() > 0) {
-			extension = extension.toLowerCase(Locale.US);
-			if (extension.equals("jpg") || extension.equals("jpeg"))
-				return FileType.JPEG;
-			else if (extension.equals("json"))
-				return FileType.JSON;
-			else if (extension.equals("html") || extension.equals("htm"))
-				return FileType.HTML;
-		}
-		return FileType.TEXT;
-	}
-
 	public boolean is_running() {
 		return (this.listener != null && !this.listener.isClosed());
 	}
@@ -319,18 +312,18 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	private void process_user_request(ArrayList<String> request, OutputStream raw_output) {
+	private void process_user_request(ArrayList<String> request, OutputStream raw_output) throws HTTPError {
 		PrintWriter output = new PrintWriter(raw_output);
 		String filename = request.get(1);
-		FileType filetype = filetype_by_extension(filename);
-		BufferedInputStream file = null;
 		String err = "";
+		if (userdir == null)
+			throw new HTTPError("User directory not defined.");
+		UserFile user_file = new UserFile(new File(userdir, filename));
+		UserFile.FileType filetype = user_file.get_filetype();
+		BufferedInputStream file = null;
+	
 		try {
-			if (userdir == null)
-				err = "User directory not defined.";
-			else if (filename.length() != 0)
-				file = new BufferedInputStream(new FileInputStream(
-						new File(userdir, request.get(1))));
+			file = user_file.get_input_stream();
 		} catch (SecurityException se) {
 			err = "Cannot read" + filename;
 			file = null;
@@ -338,7 +331,7 @@ public class GenericServer implements Runnable {
 			err = "File not found " + filename;
 			file = null;
 		}
-
+		
 		if (file == null) {
 			html_write("File error", err, "HTTP/1.1 401 Permission Denied",
 					output);
@@ -347,9 +340,9 @@ public class GenericServer implements Runnable {
 		byte[] buffer = new byte[4096];
 
 		output.println(STATUS_OK);
-		if (filetype == FileType.JPEG)
+		if (filetype == UserFile.FileType.JPEG)
 			output.println("Content-type: image/jpeg");
-		else if (filetype == FileType.HTML)
+		else if (filetype == UserFile.FileType.HTML)
 			output.println("Content-type: text/html");
 		else
 			output.println("Content-type: text/plain");
@@ -389,17 +382,30 @@ public class GenericServer implements Runnable {
 			}
 			else
 			{
-				HashMap<String, String> post_data = client_request.get_full_post_data();
-				Iterator<String> it = post_data.keySet().iterator();
-				String post_string = "";
-				String key;
-				while(it.hasNext())
-				{
-					key = it.next();
-					post_string += key + "=" + post_data.get(key) + "\n";
-				}
+				String post_string = post_data_as_string(client_request);
 				html_write(echo, echo + "\nPOST:\n" + post_string, output);
 			}
 		}
+	}
+
+	private void process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError {
+		if(!client_request.has_post_data())
+			throw new HTTPError("/file requires POST data");	
+		
+	}
+
+
+	public static String post_data_as_string(HTTPRequest client_request) {
+		HashMap<String, String> post_data = client_request.get_full_post_data();
+		Iterator<String> it = post_data.keySet().iterator();
+		String post_string = "";
+		String key;
+		while(it.hasNext())
+		{
+			key = it.next();
+			post_string += key + "=" + post_data.get(key) + "\n";
+		}
+
+		return post_string;
 	}
 }
