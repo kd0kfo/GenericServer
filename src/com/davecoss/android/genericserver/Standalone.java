@@ -71,7 +71,7 @@ public class Standalone {
 
 	public class StandaloneHandler implements ServerHandler
 	{
-		public int verbosity = 2;
+		public int verbosity = 1;
 		
 		public StandaloneHandler()
 		{

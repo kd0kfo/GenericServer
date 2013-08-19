@@ -39,7 +39,7 @@ public class GenericServer implements Runnable {
 		try {
 			start_server(InetAddress.getByName("localhost"), this.port);
 		} catch (IOException ioe) {
-			handler.debug("GenericServer", "IOException: " + ioe.getMessage());
+			handler.error("GenericServer", "IOException: " + ioe.getMessage());
 
 		}
 	}
@@ -49,7 +49,7 @@ public class GenericServer implements Runnable {
 		try {
 			start_server(addr, this.port);
 		} catch (IOException ioe) {
-			handler.debug("GenericServer", "IOException: " + ioe.getMessage());
+			handler.error("GenericServer", "IOException: " + ioe.getMessage());
 		}
 	}
 
@@ -109,7 +109,9 @@ public class GenericServer implements Runnable {
 			}
 			catch(HTTPError httpe)
 			{
-				html_write("Error processing user request", "Error Processing user request: " + httpe.getMessage(), STATUS_ERROR, output);
+				String err = "Error Processing user request: " + httpe.getMessage();
+				handler.debug("GenericServer.process_request", err);
+				html_write("Error processing user request", err, STATUS_ERROR, output);
 			}
 		} else if (request.get(0).equals("favicon.ico")) {
 			output.println("HTTP/1.1 200 Ok");
@@ -124,7 +126,9 @@ public class GenericServer implements Runnable {
 			}
 			catch(HTTPError httpe)
 			{
-				html_write("Error processing file", "Error Processing File: " + httpe.getMessage(), STATUS_ERROR, output);
+				String err = "Error Processing File: " + httpe.getMessage();
+				handler.debug("GenericServer.process_request", err);
+				html_write("Error processing file", err, STATUS_ERROR, output);
 			}
 		} else {
 			html_write(request.get(0),
@@ -160,7 +164,7 @@ public class GenericServer implements Runnable {
 				if (this.listener == null)
 					start_server();
 				Socket socket = listener.accept();
-				handler.debug("GenericServer.run", "Opened socket on port " + port);
+				handler.info("GenericServer.run", "Opened socket on port " + port);
 				try {
 					OutputStream out = socket.getOutputStream();
 					BufferedReader input = new BufferedReader(
@@ -169,7 +173,7 @@ public class GenericServer implements Runnable {
 					HTTPRequest request = null;
 					while (input_text != null
 							&& !Thread.currentThread().isInterrupted()) {
-						handler.debug("GenericServer.run", "Client Said: " + input_text);
+						handler.info("GenericServer.run", "Client Said: " + input_text);
 						String[] request_tokens = input_text.split(" ");
 						int request_data_len = input_text.length();
 						if(request_data_len > 0 && request_tokens.length < 2)
@@ -178,7 +182,7 @@ public class GenericServer implements Runnable {
 						}
 						else if (request_tokens[0].equals("GET") || request_tokens[0].equals("POST"))
 						{
-							handler.debug("GenericServer.run", "Receiving " + request_tokens[0]);
+							handler.debug("GenericServer.run", input_text);
 							request = new HTTPRequest(request_tokens[0], request_tokens[1]);
 						}
 						else if(request != null && request_data_len != 0)
@@ -197,8 +201,8 @@ public class GenericServer implements Runnable {
 						if (request_data_len == 0) {
 							if(request != null)
 							{
-								handler.debug("GenericServer.run", "Received Request");
-								handler.debug("GenericServer.run", request.toString()); 
+								handler.info("GenericServer.run", "Received Request");
+								handler.info("GenericServer.run", request.toString()); 
 							}
 							break;
 						}
@@ -218,7 +222,7 @@ public class GenericServer implements Runnable {
 									char[] buffer = new char[post_len];
 									input.read(buffer, 0, post_len);
 									String post_data = new String(buffer);
-									handler.debug("GenericServer.run", "POST Data: " + post_data);
+									handler.info("GenericServer.run", "POST Data: " + post_data);
 									request.put_post_data(post_data);
 								}
 								catch(NumberFormatException nfe)
@@ -235,14 +239,14 @@ public class GenericServer implements Runnable {
 						handler.error("GenericServer.run", "HTTP ERROR: " + httperr);
 					}
 				} finally {
-					handler.debug("GenericServer.run", "Closing socket");
+					handler.info("GenericServer.run", "Closing socket");
 					socket.close();
-					handler.debug("GenericServer.run", "Socket closed");
+					handler.info("GenericServer.run", "Socket closed");
 				}
 			} catch (SocketException se) {
-				handler.debug("GenericServer.run", "Socket closed");
+				handler.error("GenericServer.run", "Socket closed");
 			} catch (IOException ioe) {
-				handler.debug("GenericServer.run", "IOException: " + ioe.getMessage());
+				handler.error("GenericServer.run", "IOException: " + ioe.getMessage());
 			}
 		}// while not interrupted
 	}
@@ -251,7 +255,7 @@ public class GenericServer implements Runnable {
 		try {
 			listener = new ServerSocket(this.port, 0, this.addr);
 		} catch (IOException ioe) {
-			handler.debug("GenericServer.start_server", "IOException: " + ioe.getMessage());
+			handler.error("GenericServer.start_server", "IOException: " + ioe.getMessage());
 		}
 	}
 
@@ -266,7 +270,7 @@ public class GenericServer implements Runnable {
 			try {
 				this.listener.close();
 			} catch (IOException ioe) {
-				handler.debug("GenericServer.stop_server", "Could not close socket listener: " + ioe.getMessage());
+				handler.error("GenericServer.stop_server", "Could not close socket listener: " + ioe.getMessage());
 			}
 		}
 		this.listener = null;
@@ -327,9 +331,11 @@ public class GenericServer implements Runnable {
 		} catch (SecurityException se) {
 			err = "Cannot read" + filename;
 			file = null;
+			handler.debug("GenericSerer.process_user_request", err + "\n" + se.getMessage());
 		} catch (FileNotFoundException fnfe) {
 			err = "File not found " + filename;
 			file = null;
+			handler.debug("GenericSerer.process_user_request", err + "\n" + fnfe.getMessage());
 		}
 		
 		if (file == null) {
