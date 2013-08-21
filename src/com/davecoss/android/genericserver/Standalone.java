@@ -45,6 +45,14 @@ public class Standalone {
 			} else if (input.equals("setdir")) {
 				String dir = console.readLine("What directory? ");
 				server.setdir(dir);
+			} else if (input.equals("setpin")) {
+				String pin = console.readLine("New Pin?");
+				try {
+					int pin_int = Integer.valueOf(pin);
+					//server.setpin(pin_int);
+				} catch(NumberFormatException nfe) {
+					cout.println("Invalid PIN: " + pin);
+				}
 			} else if (input.equals("debug")) { 
 				handler.verbosity = 1;
 			} else if (input.equals("info")) { 
