@@ -3,6 +3,7 @@ package com.davecoss.android.genericserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -30,6 +31,7 @@ public class GenericServer implements Runnable {
 	private String userdir = null;
 	private InetAddress addr = null;
 	private ServerHandler handler;
+	private String outfile_name = "output.dat";
 
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
@@ -123,6 +125,12 @@ public class GenericServer implements Runnable {
 		} else if (request.get(0).equals("file")) {
 			try {
 				process_file(client_request, request, output);
+			}
+			catch(IOException ioe)
+			{
+				String err = "Error Processing File: " + ioe.getMessage();
+				handler.debug("GenericServer.process_request", err);
+				html_write("Error processing file", err, STATUS_ERROR, output);
 			}
 			catch(HTTPError httpe)
 			{
@@ -394,10 +402,38 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	private void process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError {
+	private void process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError, IOException {
+		handler.info("GenericServer.process_file", "Processing file.");
 		if(!client_request.has_post_data())
-			throw new HTTPError("/file requires POST data");	
+			throw new HTTPError("/file requires POST data");
+		if(request.size() < 2)
+			throw new HTTPError("/file requires a name in path for form: /file/FILENAME");
+
+		String filename = request.get(1);
+		String header = "\n--- Begin " + filename + " ---\n";
+		int header_len = header.length();
+		String footer = "\n--- End " + filename + " ---\n";
+		int footer_len = footer.length();
+	
+		String contents = client_request.get_post_data("content");
+		if(contents == null)
+			contents = "";
 		
+		// TODO: have get_output_stream throw exception if output cannot be performed. The pass this along.
+		if (userdir == null)
+			throw new HTTPError("User directory not defined.");
+		UserFile outfile = new UserFile(new File(userdir, filename));
+		BufferedOutputStream outstream = outfile.get_output_stream();
+		outstream.write(header.getBytes(), 0, header_len); 
+		outstream.write(contents.getBytes(), 0, contents.length());
+		outstream.write(footer.getBytes(), 0, footer_len); 
+		outstream.flush();
+	
+		String msg = "Wrote " + contents.length() + " bytes to file.";
+		handler.info("GenericServer.process_file", msg);
+
+	
+		html_write("Wrote to file", msg, output);
 	}
 
 

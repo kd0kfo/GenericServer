@@ -2,7 +2,9 @@ package com.davecoss.android.genericserver;
 
 import java.io.File;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.util.Locale;
 
@@ -49,5 +51,18 @@ public class UserFile {
 				the_file));
 	
 			
+	}
+
+	public BufferedOutputStream get_output_stream() throws FileNotFoundException, HTTPError {
+	
+		String filename = the_file.getName();
+	
+		if (filename.length() == 0)
+			throw new HTTPError("filename not specified");
+
+		return new BufferedOutputStream(new FileOutputStream(the_file, true));
+	
+	
+
 	}
 }
