@@ -436,10 +436,13 @@ public class GenericServer implements Runnable {
 		if(contents == null)
 			contents = "";
 		
+		if(userdir == null)
+			throw new HTTPError("User directory not specified");
+		
 		UserFile outfile = new UserFile(new File(userdir, this.outfile_name));
 		
 		try {
-			handler.info("GenericServer.process_file", "Opening " + outfile.get_filename());
+			handler.info("GenericServer.process_file", "Opening " + outfile.get_absolute_path());
 			outfile.init_output();
 			outfile.write(header.getBytes(), 0, header_len); 
 			outfile.write(contents.getBytes(), 0, contents.length());

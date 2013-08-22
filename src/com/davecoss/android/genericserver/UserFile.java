@@ -23,6 +23,14 @@ public class UserFile {
 		this.the_file = file;	
 	}
 
+	public String get_parent() {
+		return the_file.getParent();
+	}
+	
+	public String get_absolute_path() {
+		return the_file.getAbsolutePath();
+	}
+
 	public String get_filename() {
 		return the_file.getName();
 	}
