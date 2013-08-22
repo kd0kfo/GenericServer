@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html>
+<script language="javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script language="javascript">
+$(document).ready(function() {
+	$("#add_timestamp").click(function(){
+		var filename_node = $("#filename");
+		var date = new Date();
+		filename_node.val(filename_node.val() + " " + date.toISOString());
+	}); 
+});
+</script>
 </html>
 <body>
 <form name="input" action="/file" method="post">
-<label for="filename">File name</label> <input type="text" name="filename">
+<label for="filename">File name</label> <input type="text" name="filename" id="filename"/><a href="#" id="add_timestamp">Add Timestamp</a>
 </br>
 </br>
 <label for="content">Content</label>

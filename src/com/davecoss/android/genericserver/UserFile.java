@@ -14,7 +14,7 @@ public class UserFile {
 		HTML, TEXT, JSON, JPEG
 	}
 	
-	private static long MAX_OUTFILE_SIZE = 33554432L;
+	public static final long MAX_OUTFILE_SIZE = 33554432L;
 	private BufferedOutputStream outstream = null;
 
 	private File the_file;

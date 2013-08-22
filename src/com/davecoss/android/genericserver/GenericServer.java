@@ -3,6 +3,7 @@ package com.davecoss.android.genericserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
+import org.apache.commons.io.input.BoundedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
@@ -33,6 +34,7 @@ public class GenericServer implements Runnable {
 	private String outfile_name = "output.dat";
 
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
+	private static final String STATUS_FORBIDDEN = "HTTP/1.1 403 Forbidden";
 	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
 
 	public GenericServer(ServerHandler handler) {
@@ -175,8 +177,8 @@ public class GenericServer implements Runnable {
 				handler.info("GenericServer.run", "Opened socket on port " + port);
 				try {
 					OutputStream out = socket.getOutputStream();
-					BufferedReader input = new BufferedReader(
-							new InputStreamReader(socket.getInputStream()));
+					BufferedReader input = new BufferedReader(new InputStreamReader(
+							new BoundedInputStream(socket.getInputStream(), UserFile.MAX_OUTFILE_SIZE)));
 					String input_text = input.readLine();
 					HTTPRequest request = null;
 					while (input_text != null
@@ -228,7 +230,15 @@ public class GenericServer implements Runnable {
 								try
 								{
 									int post_len = Integer.parseInt(len_as_str);
+									if(post_len >= UserFile.MAX_OUTFILE_SIZE)
+									{
+										String err = "Too much post data sent. Sent: " + post_len;
+										handler.debug("GenericServer.run", err);
+										html_write("Error", err, STATUS_FORBIDDEN, new PrintWriter(out));
+										continue;
+									}		
 									char[] buffer = new char[post_len];
+									handler.info("GenericServer.run", "Reading " + post_len + " bytes of post data");
 									input.read(buffer, 0, post_len);
 									String post_data = new String(buffer);
 									handler.info("GenericServer.run", "POST Data: " + post_data);
