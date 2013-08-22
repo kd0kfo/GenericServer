@@ -8,7 +8,6 @@ import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -42,7 +41,7 @@ public class GenericServer implements Runnable {
 			start_server(InetAddress.getByName("localhost"), this.port);
 		} catch (IOException ioe) {
 			handler.error("GenericServer", "IOException: " + ioe.getMessage());
-
+			handler.traceback(ioe);
 		}
 	}
 
@@ -52,6 +51,7 @@ public class GenericServer implements Runnable {
 			start_server(addr, this.port);
 		} catch (IOException ioe) {
 			handler.error("GenericServer", "IOException: " + ioe.getMessage());
+			handler.traceback(ioe);
 		}
 	}
 
@@ -202,6 +202,7 @@ public class GenericServer implements Runnable {
 							catch(InvalidRequestData ird)
 							{
 								handler.error("GenericServer.run", "Invalid Data from Client: " + ird);
+								handler.traceback(ird);
 							}
 						}
 						out.flush();
@@ -237,6 +238,7 @@ public class GenericServer implements Runnable {
 								{
 									handler.error("GenericServer.run", "Invalid Content-Length: " + len_as_str);
 									handler.error("GenericServer.run", nfe.getMessage());
+									handler.traceback(nfe);
 								}
 							}
 						}
@@ -245,6 +247,7 @@ public class GenericServer implements Runnable {
 					catch(HTTPError httperr)
 					{
 						handler.error("GenericServer.run", "HTTP ERROR: " + httperr);
+						handler.traceback(httperr);
 					}
 				} finally {
 					handler.info("GenericServer.run", "Closing socket");
@@ -253,8 +256,11 @@ public class GenericServer implements Runnable {
 				}
 			} catch (SocketException se) {
 				handler.error("GenericServer.run", "Socket closed");
+				if(!se.getMessage().equals("Socket closed"))
+					handler.traceback(se);
 			} catch (IOException ioe) {
 				handler.error("GenericServer.run", "IOException: " + ioe.getMessage());
+				handler.traceback(ioe);
 			}
 		}// while not interrupted
 	}
@@ -264,6 +270,7 @@ public class GenericServer implements Runnable {
 			listener = new ServerSocket(this.port, 0, this.addr);
 		} catch (IOException ioe) {
 			handler.error("GenericServer.start_server", "IOException: " + ioe.getMessage());
+			handler.traceback(ioe);
 		}
 	}
 
@@ -279,6 +286,7 @@ public class GenericServer implements Runnable {
 				this.listener.close();
 			} catch (IOException ioe) {
 				handler.error("GenericServer.stop_server", "Could not close socket listener: " + ioe.getMessage());
+				handler.traceback(ioe);
 			}
 		}
 		this.listener = null;
@@ -406,10 +414,19 @@ public class GenericServer implements Runnable {
 		handler.info("GenericServer.process_file", "Processing file.");
 		if(!client_request.has_post_data())
 			throw new HTTPError("/file requires POST data");
-		if(request.size() < 2)
-			throw new HTTPError("/file requires a name in path for form: /file/FILENAME");
-
-		String filename = request.get(1);
+		
+		String filename = "";
+		if(request.size() >= 2)
+		{
+			filename = request.get(1);
+		}
+		else
+		{
+			filename = client_request.get_post_data("filename");
+			if(filename == null)
+				filename = "";
+		}
+		
 		String header = "\n--- Begin " + filename + " ---\n";
 		int header_len = header.length();
 		String footer = "\n--- End " + filename + " ---\n";
@@ -419,15 +436,22 @@ public class GenericServer implements Runnable {
 		if(contents == null)
 			contents = "";
 		
-		// TODO: have get_output_stream throw exception if output cannot be performed. The pass this along.
-		if (userdir == null)
-			throw new HTTPError("User directory not defined.");
-		UserFile outfile = new UserFile(new File(userdir, filename));
-		BufferedOutputStream outstream = outfile.get_output_stream();
-		outstream.write(header.getBytes(), 0, header_len); 
-		outstream.write(contents.getBytes(), 0, contents.length());
-		outstream.write(footer.getBytes(), 0, footer_len); 
-		outstream.flush();
+		UserFile outfile = new UserFile(new File(userdir, this.outfile_name));
+		
+		try {
+			handler.info("GenericServer.process_file", "Opening " + outfile.get_filename());
+			outfile.init_output();
+			outfile.write(header.getBytes(), 0, header_len); 
+			outfile.write(contents.getBytes(), 0, contents.length());
+			outfile.write(footer.getBytes(), 0, footer_len); 
+		}
+		finally {
+			if(outfile != null)
+			{
+				outfile.flush();
+				outfile.close();
+			}
+		}
 	
 		String msg = "Wrote " + contents.length() + " bytes to file.";
 		handler.info("GenericServer.process_file", msg);

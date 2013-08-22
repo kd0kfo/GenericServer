@@ -101,8 +101,13 @@ public class HTTPRequest {
 		for(int i = 0;i<key_val_pairs.length;i++)
 		{
 			String[] pair = key_val_pairs[i].split("=");
-			if(pair.length != 2)
+			if(pair.length == 0)
 				throw new InvalidPostData("Invalid Post data: " + data);
+			else if(pair.length == 1)
+			{
+				String tmp = pair[0];
+				pair = new String[]{tmp, ""};
+			}
 			String key, val;
 			key = post_decode(pair[0], encoding);
 			val = post_decode(pair[1], encoding);

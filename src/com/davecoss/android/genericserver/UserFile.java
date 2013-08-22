@@ -6,12 +6,16 @@ import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Locale;
 
 public class UserFile {
 	public enum FileType {
 		HTML, TEXT, JSON, JPEG
 	}
+	
+	private static long MAX_OUTFILE_SIZE = 33554432L;
+	private BufferedOutputStream outstream = null;
 
 	private File the_file;
 
@@ -19,6 +23,9 @@ public class UserFile {
 		this.the_file = file;	
 	}
 
+	public String get_filename() {
+		return the_file.getName();
+	}
 
 	public static UserFile.FileType filetype_by_extension(String filename) {
 		if (!filename.contains("."))
@@ -53,16 +60,46 @@ public class UserFile {
 			
 	}
 
-	public BufferedOutputStream get_output_stream() throws FileNotFoundException, HTTPError {
+	public void init_output() throws IOException, FileNotFoundException, HTTPError {
+		String filename = the_file.getName();
+		
+		if (filename.length() == 0)
+			throw new HTTPError("filename not specified");
+		
+		if(this.outstream != null)
+			this.outstream.close();
+		this.outstream = new BufferedOutputStream(new FileOutputStream(the_file, true));
+	}
+	
+	public void flush() throws IOException {
+		if(outstream == null)
+			return;
+		outstream.flush();
+	}
+	
+	public void close() throws IOException {
+		if(outstream == null)
+			return;
+		
+		outstream.close();
+	}
+	
+	public void write(byte[] bytes, int offset, int len) 
+			throws FileError, HTTPError, IOException {
 	
 		String filename = the_file.getName();
 	
 		if (filename.length() == 0)
 			throw new HTTPError("filename not specified");
-
-		return new BufferedOutputStream(new FileOutputStream(the_file, true));
-	
-	
-
+		
+		long file_size = the_file.length();
+		if(file_size + len >= MAX_OUTFILE_SIZE)
+			throw new FileError("Max file size already reached");
+		
+		if(outstream == null)
+			init_output();
+		
+		outstream.write(bytes, offset, len);
+		
 	}
 }

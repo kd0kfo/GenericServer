@@ -91,6 +91,11 @@ public class Standalone {
 			verbosity = verbosity;
 		}
 		
+		public void traceback(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
 		public void error(String tag, String msg)
 		{
 			System.err.println(tag + ": " + msg);

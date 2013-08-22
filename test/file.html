@@ -2,9 +2,14 @@
 <html>
 </html>
 <body>
-<form name="input" action="/file/test" method="post">
-Content: <input type="text" name="content">
-<input type="hidden" name="hiddentext" value="hidden text"/>
+<form name="input" action="/file" method="post">
+<label for="filename">File name</label> <input type="text" name="filename">
+</br>
+</br>
+<label for="content">Content</label>
+<br/>
+<textarea rows="10" name="content"></textarea>
+<br/>
 <input type="submit" value="Submit">
 </form>
 </body>

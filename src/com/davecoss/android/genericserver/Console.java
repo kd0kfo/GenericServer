@@ -206,5 +206,9 @@ public class Console extends Activity {
 		{
 			Log.i(tag, msg);
 		}
+
+		public void traceback(Exception e) {
+			Log.getStackTraceString(e);
+		}
 	}
 }
