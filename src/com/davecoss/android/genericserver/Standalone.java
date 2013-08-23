@@ -11,6 +11,14 @@ public class Standalone {
 		StandaloneHandler handler = new Standalone().new StandaloneHandler();
 		ServerBundle server = new ServerBundle(handler);
 		Console console = System.console();
+		if(console == null) {
+			server.start_server();
+			System.out.println("Could not get console. Running simple server. Press Ctrl-C to terminate.");
+			while(server.is_running())
+				continue;
+			System.exit(0);
+		}
+		
 		PrintWriter cout = console.writer();
 
 		server.start_server();
