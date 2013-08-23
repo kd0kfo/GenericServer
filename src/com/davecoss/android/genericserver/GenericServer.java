@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
 import org.apache.commons.io.input.BoundedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -253,6 +252,7 @@ public class GenericServer implements Runnable {
 							}
 						}
 						process_request(request, out);
+						input.close();
 					}
 					catch(HTTPError httperr)
 					{
@@ -361,7 +361,7 @@ public class GenericServer implements Runnable {
 		} catch (FileNotFoundException fnfe) {
 			err = "File not found " + filename;
 			file = null;
-			handler.debug("GenericSerer.process_user_request", err + "\n" + fnfe.getMessage());
+			handler.debug("GenericServer.process_user_request", err + "\n" + fnfe.getMessage());
 		}
 		
 		if (file == null) {
