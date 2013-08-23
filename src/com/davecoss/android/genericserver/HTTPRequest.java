@@ -73,6 +73,23 @@ public class HTTPRequest {
 	{
 		return this.uri;
 	}
+
+
+	public String get_path()
+	{
+		int query_loc = this.uri.indexOf('?');
+		if(query_loc != -1)
+			return this.uri.substring(0, query_loc);
+		return this.uri;
+	}
+
+	public String get_query()
+	{
+		int query_loc = this.uri.indexOf('?');
+		if(query_loc != -1)
+			return this.uri.substring(query_loc + 1);
+		return "";
+	}
 	
 	public RequestType get_type()
 	{

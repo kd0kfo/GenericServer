@@ -92,7 +92,8 @@ public class GenericServer implements Runnable {
 		PrintWriter output = new PrintWriter(raw_output);
 		if(client_request == null)
 			throw new EmptyRequest();
-		String uri = client_request.get_uri();
+		String uri = client_request.get_path();
+		String query = client_request.get_query();
 		if (uri == null)
 			return;
 
