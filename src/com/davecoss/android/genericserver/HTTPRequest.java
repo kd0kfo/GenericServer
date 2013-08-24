@@ -9,6 +9,7 @@ import java.net.URLDecoder;
 
 public class HTTPRequest {
 	public static String DEFAULT_PROTOCOL = "HTTP/1.1";
+	public static String DEFAULT_ENCODING = "UTF-8";
 	
 	enum RequestType {
 		GET, POST
@@ -88,7 +89,31 @@ public class HTTPRequest {
 		int query_loc = this.uri.indexOf('?');
 		if(query_loc != -1)
 			return this.uri.substring(query_loc + 1);
-		return "";
+		return null;
+	}
+	
+	public HashMap<String, String> get_query_map() throws HTTPError
+	{
+		String query = get_query();
+		if(query == null)
+			return null;
+		
+		HashMap<String, String> retval = new HashMap<String, String>();
+		String[] tags = query.split("&");
+		
+		for(String tag: tags)
+		{
+			String[] parameter;
+			try {
+				parameter = split_parameter(tag);
+			} 
+			catch (InvalidPostData ipd) {
+				throw new HTTPError("Invalid query string: " + query);
+			}
+			retval.put(parameter[0], parameter[1]);
+		}
+		
+		return retval;
 	}
 	
 	public RequestType get_type()
@@ -111,25 +136,36 @@ public class HTTPRequest {
 	
 	public void put_post_data(String data) throws InvalidPostData
 	{
-		String encoding = "UTF-8";
 		if(post_data == null)
 			post_data = new HashMap<String, String>();
 		String[] key_val_pairs = data.split("&");
-		for(int i = 0;i<key_val_pairs.length;i++)
+		for(String key_val_pair : key_val_pairs)
 		{
-			String[] pair = key_val_pairs[i].split("=");
-			if(pair.length == 0)
-				throw new InvalidPostData("Invalid Post data: " + data);
-			else if(pair.length == 1)
-			{
-				String tmp = pair[0];
-				pair = new String[]{tmp, ""};
-			}
-			String key, val;
-			key = post_decode(pair[0], encoding);
-			val = post_decode(pair[1], encoding);
-			post_data.put(key, val);
+			String[] key_val = split_parameter(key_val_pair);
+			post_data.put(key_val[0], key_val[1]);
 		}
+	}
+	
+	public String[] split_parameter(String parameter) throws InvalidPostData
+	{
+		return split_parameter(parameter, DEFAULT_ENCODING);
+	}
+	
+	public String[] split_parameter(String parameter, String encoding) throws InvalidPostData
+	{
+		String[] pair = parameter.split("=");
+		if(pair.length == 0)
+			throw new InvalidPostData("Invalid Post data: " + parameter);
+		else if(pair.length == 1)
+		{
+			String tmp = pair[0];
+			pair = new String[]{tmp, ""};
+		}
+		
+		pair[0] = post_decode(pair[0], encoding);
+		pair[1] = post_decode(pair[1], encoding);
+		
+		return pair;
 	}
 	
 	public String get_post_data(String key)
