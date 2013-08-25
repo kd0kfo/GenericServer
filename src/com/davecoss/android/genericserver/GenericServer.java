@@ -144,7 +144,7 @@ public class GenericServer implements Runnable {
 			catch(HTTPError httpe)
 			{
 				String err = "Error Processing File: " + httpe.getMessage();
-				handler.debug("GenericServer.process_request", err);
+				handler.error("GenericServer.process_request", err);
 				html_write("Error processing file", err, STATUS_ERROR, output);
 			}
 		} else {
