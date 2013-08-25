@@ -4,8 +4,7 @@ import java.io.Console;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.io.IOException;
-
-import com.davecoss.android.genericserver.ServerBundle;
+import java.io.FileNotFoundException;
 
 public class Standalone {
 
@@ -81,6 +80,28 @@ public class Standalone {
 			} else if (input.equals("disallowwrite")) {
 				if(server != null)
 					server.set_write_permission(false);
+			} else if (input.equals("dumpconfig")) {
+				if(server != null)
+				{
+					try
+					{
+						server.dump_config();
+					} catch(Exception e) {
+						cout.println("Could not save configuration");
+						handler.traceback(e);
+					}
+				}
+			} else if (input.equals("loadconfig")) {
+				if(server != null)
+				{
+					try
+					{
+						server.load_config();
+					} catch(Exception e) {
+						cout.println("Could not load configuration");
+						handler.traceback(e);
+					}
+				}
 			} else {
 				cout.println("Unknown: " + input);
 			}

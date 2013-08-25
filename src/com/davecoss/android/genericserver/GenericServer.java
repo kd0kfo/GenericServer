@@ -3,8 +3,11 @@ package com.davecoss.android.genericserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
+
 import org.apache.commons.io.input.BoundedInputStream;
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -18,6 +21,7 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 
 
 import org.json.simple.JSONObject;
@@ -33,6 +37,9 @@ public class GenericServer implements Runnable {
 	private String outfile_name = "output.dat";
 	private boolean has_write_permission = false;
 
+	private static final String DEFAULT_HOSTNAME = "localhost";
+	
+	// Status messages
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 	private static final String STATUS_FORBIDDEN = "HTTP/1.1 403 Forbidden";
 	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
@@ -40,7 +47,7 @@ public class GenericServer implements Runnable {
 	public GenericServer(ServerHandler handler) {
 		this.handler = handler;
 		try {
-			start_server(InetAddress.getByName("localhost"), this.port);
+			start_server(InetAddress.getByName(DEFAULT_HOSTNAME), this.port);
 		} catch (IOException ioe) {
 			handler.error("GenericServer", "IOException: " + ioe.getMessage());
 			handler.traceback(ioe);
@@ -94,7 +101,6 @@ public class GenericServer implements Runnable {
 		if(client_request == null)
 			throw new EmptyRequest();
 		String uri = client_request.get_path();
-		String query = client_request.get_query();
 		if (uri == null)
 			return;
 
@@ -503,5 +509,44 @@ public class GenericServer implements Runnable {
 	public boolean get_write_permission()
 	{
 		return this.has_write_permission;
+	}
+	
+	public void dump_config() throws FileNotFoundException, IOException
+	{
+		String conf_filename = "server.conf";
+		Properties config = new Properties();
+		
+		config.setProperty("address", addr.getHostAddress());
+		config.setProperty("port", Integer.toString(port));
+		if(userdir != null)
+			config.setProperty("userdir", userdir);
+		config.setProperty("has_write_permission", Boolean.toString(has_write_permission));
+		
+		config.store(new FileOutputStream(conf_filename), "Server Config");
+	}
+	
+	public void load_config() throws FileNotFoundException, IOException
+	{
+		String conf_filename = "server.conf";
+		Properties config = new Properties();
+		config.load(new FileInputStream(conf_filename));
+		
+		String val = config.getProperty("address", addr.getHostAddress());
+		addr = InetAddress.getByName(val);
+		
+		val = config.getProperty("port", Integer.toString(port));
+		port = Integer.parseInt(val);
+		
+		userdir = config.getProperty("userdir", userdir);
+		
+		val = config.getProperty("has_write_permission", Boolean.toString(has_write_permission));
+		has_write_permission = Boolean.parseBoolean(val);
+		
+		handler.debug("GenericServer.load_config", "Loaded configuration from " + conf_filename);
+		handler.debug("GenericServer.load_config", "Restarting Server");
+		
+		stop_server();
+		start_server();
+		
 	}
 }

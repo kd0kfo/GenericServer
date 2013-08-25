@@ -1,8 +1,10 @@
 package com.davecoss.android.genericserver;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.lang.InterruptedException;
+
 
 public class ServerBundle {
 	private GenericServer serverd;
@@ -87,5 +89,18 @@ public class ServerBundle {
 			return false;
 		return this.serverd.get_write_permission();
 	}
-
+	
+	public void dump_config() throws FileNotFoundException, IOException
+	{
+		if(this.serverd == null)
+			return;
+		this.serverd.dump_config();
+	}
+	
+	public void load_config() throws FileNotFoundException, IOException 
+	{
+		if(this.serverd == null)
+			return;
+		this.serverd.load_config();
+	}
 }
