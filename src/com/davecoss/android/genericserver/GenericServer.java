@@ -285,6 +285,8 @@ public class GenericServer implements Runnable {
 
 	private void start_server() throws IOException {
 		try {
+			if(listener != null && !listener.isClosed())
+				listener.close();
 			listener = new ServerSocket(this.port, 0, this.addr);
 		} catch (IOException ioe) {
 			handler.error("GenericServer.start_server", "IOException: " + ioe.getMessage());
