@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
+import com.davecoss.android.genericserver.ServerBundle;
+
 public class Standalone {
 
 	public static void main(String[] args) throws IOException {
@@ -73,6 +75,12 @@ public class Standalone {
 				else
 					cout.println("Listening on " + server.get_address() + ":"
 							+ server.get_port());
+			} else if (input.equals("allowwrite")) {
+				if(server != null)
+					server.set_write_permission(true);
+			} else if (input.equals("disallowwrite")) {
+				if(server != null)
+					server.set_write_permission(false);
 			} else {
 				cout.println("Unknown: " + input);
 			}

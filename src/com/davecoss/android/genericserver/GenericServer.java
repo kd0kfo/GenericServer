@@ -31,6 +31,7 @@ public class GenericServer implements Runnable {
 	private InetAddress addr = null;
 	private ServerHandler handler;
 	private String outfile_name = "output.dat";
+	private boolean has_write_permission = false;
 
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 	private static final String STATUS_FORBIDDEN = "HTTP/1.1 403 Forbidden";
@@ -422,6 +423,10 @@ public class GenericServer implements Runnable {
 	}
 
 	private void process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError, IOException {
+		
+		if(!this.has_write_permission )
+			throw new FileError("File Writing Not Allowed");
+		
 		handler.info("GenericServer.process_file", "Processing file.");
 		if(!client_request.has_post_data())
 			throw new HTTPError("/file requires POST data");
@@ -487,5 +492,16 @@ public class GenericServer implements Runnable {
 		}
 
 		return post_string;
+	}
+	
+	public void set_write_permission(boolean can_write)
+	{
+		this.has_write_permission = can_write;
+		handler.debug("GenericServer.set_write_permission", "Setting write permission to " + can_write);
+	}
+	
+	public boolean get_write_permission()
+	{
+		return this.has_write_permission;
 	}
 }

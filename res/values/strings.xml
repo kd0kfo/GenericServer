@@ -10,5 +10,6 @@
     <string name="set_addr">Set Address</string>
     <string name="user_dir">"User Directory: "</string>
     <string name="txt_messages">Messages</string>
+    <string name="lbl_write_permission">User Can Write:</string>
 
 </resources>

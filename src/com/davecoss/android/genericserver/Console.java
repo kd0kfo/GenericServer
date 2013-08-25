@@ -129,6 +129,14 @@ public class Console extends Activity {
 	    status_message("Status: Stopped");
 	}
 	
+	public void setWritePerm(View view)
+	{
+		ToggleButton tb = (ToggleButton) findViewById(R.id.btn_write_perm);
+		
+		if(server != null)
+			server.set_write_permission(tb.isChecked());
+	}
+	
 	public void setdir(View view)
 	{
 		ToggleButton tv = (ToggleButton) findViewById(R.id.btn_setdir);

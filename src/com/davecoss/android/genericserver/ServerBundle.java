@@ -73,5 +73,19 @@ public class ServerBundle {
 			return false;
 		return this.serverd.is_running();
 	}
+	
+	public void set_write_permission(boolean can_write)
+	{
+		if(this.serverd == null)
+			return;
+		this.serverd.set_write_permission(can_write);
+	}
+	
+	public boolean get_write_permission()
+	{
+		if(this.serverd == null)
+			return false;
+		return this.serverd.get_write_permission();
+	}
 
 }
