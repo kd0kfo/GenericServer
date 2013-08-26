@@ -8,6 +8,7 @@ import org.apache.commons.io.input.BoundedInputStream;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -42,6 +43,7 @@ public class GenericServer implements Runnable {
 	// Status messages
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
 	private static final String STATUS_FORBIDDEN = "HTTP/1.1 403 Forbidden";
+	private static final String STATUS_NOT_FOUND = "HTTP/1.1 403 Not Found";
 	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
 
 	public GenericServer(ServerHandler handler) {
@@ -125,10 +127,33 @@ public class GenericServer implements Runnable {
 				html_write("Error processing user request", err, STATUS_ERROR, output);
 			}
 		} else if (request.get(0).equals("favicon.ico")) {
-			output.println("HTTP/1.1 200 Ok");
-			output.println("");
-			output.println(":-P");
-			output.println("");
+			InputStream ico_stream = this.getClass().getResourceAsStream("favicon.ico");
+			if(ico_stream == null)
+			{
+				String no_favicon = "Favicon not found";
+				html_write(no_favicon, no_favicon, STATUS_NOT_FOUND, output);
+			}
+			else
+			{
+				byte[] buffer = new byte[4096];
+				output.println("HTTP/1.1 200 Ok");
+				output.println("Content-Type: image/x-icon");
+				output.println("");
+				output.flush();
+				try{
+					while(ico_stream.read(buffer) != -1)
+					{
+						raw_output.write(buffer);
+					}
+					raw_output.flush();
+				}
+				catch(IOException ioe)
+				{
+					String err = "Error Processing Favicon: " + ioe.getMessage();
+					handler.debug("GenericServer.process_request", err);
+					html_write("Error processing favicon", err, STATUS_ERROR, output);
+				}
+			}
 		} else if (request.get(0).equals("echo")) {
 			process_echo(client_request, request, output);
 		} else if (request.get(0).equals("file")) {
