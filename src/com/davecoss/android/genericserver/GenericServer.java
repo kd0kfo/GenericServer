@@ -148,7 +148,7 @@ public class GenericServer implements Runnable {
 				handler.traceback(e);
 			}
 		} else if (request.get(0).equals("favicon.ico")) {
-			InputStream ico_stream = this.getClass().getResourceAsStream("favicon.ico");
+			InputStream ico_stream = get_favicon();
 			if(ico_stream == null)
 			{
 				String no_favicon = "Favicon not found";
@@ -573,6 +573,17 @@ public class GenericServer implements Runnable {
 	{
 		Properties config = new Properties();
 		
+		// Server Information
+		output.write("#Server Info\n".getBytes());
+		output.write("#Have Favicon? ".getBytes());
+		if(get_favicon() == null)
+			output.write("No\n".getBytes());
+		else
+			output.write("Yes\n".getBytes());
+		
+		output.write("#\n".getBytes());
+		
+		// Properties
 		config.setProperty("address", addr.getHostAddress());
 		config.setProperty("port", Integer.toString(port));
 		if(userdir != null)
@@ -611,5 +622,9 @@ public class GenericServer implements Runnable {
 		stop_server();
 		start_server();
 		
+	}
+	
+	public InputStream get_favicon() {
+		return this.getClass().getResourceAsStream("favicon.ico");
 	}
 }
