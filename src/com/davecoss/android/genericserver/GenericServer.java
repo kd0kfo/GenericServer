@@ -30,7 +30,7 @@ import org.json.simple.JSONObject;
 
 public class GenericServer implements Runnable {
 
-	private int port = 4242;
+	private int port = DEFAULT_PORT;
 	private ServerSocket listener;
 	private String userdir = null;
 	private InetAddress addr = null;
@@ -38,7 +38,8 @@ public class GenericServer implements Runnable {
 	private String outfile_name = "output.dat";
 	private boolean has_write_permission = false;
 
-	private static final String DEFAULT_HOSTNAME = "localhost";
+	public static final String DEFAULT_HOSTNAME = "localhost";
+	public static final int DEFAULT_PORT = 4242;
 	
 	// Status messages
 	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
@@ -58,6 +59,17 @@ public class GenericServer implements Runnable {
 
 	public GenericServer(InetAddress addr, ServerHandler handler) {
 		this.handler = handler;
+		try {
+			start_server(addr, this.port);
+		} catch (IOException ioe) {
+			handler.error("GenericServer", "IOException: " + ioe.getMessage());
+			handler.traceback(ioe);
+		}
+	}
+	
+	public GenericServer(InetAddress addr, int port, ServerHandler handler) {
+		this.handler = handler;
+		this.port = port;
 		try {
 			start_server(addr, this.port);
 		} catch (IOException ioe) {
@@ -337,14 +349,24 @@ public class GenericServer implements Runnable {
 		this.listener = null;
 	}
 
-	public String get_address() {
-		return this.listener.getInetAddress().toString();
+	public InetAddress get_address() {
+		return this.listener.getInetAddress();
+	}
+	
+	public void set_address(InetAddress new_address) {
+		addr = new_address;
 	}
 
 	public String get_port() {
 		if (this.listener == null)
 			return "";
 		return Integer.toString(this.listener.getLocalPort());
+	}
+	
+	public void set_port(int new_port) {
+		if (this.listener == null)
+			return;
+		this.port = new_port;
 	}
 
 	public String getdir() {

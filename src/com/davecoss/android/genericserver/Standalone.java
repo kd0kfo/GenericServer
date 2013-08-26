@@ -2,9 +2,12 @@ package com.davecoss.android.genericserver;
 
 import java.io.Console;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+
+import com.davecoss.android.genericserver.ServerBundle;
 
 public class Standalone {
 
@@ -30,10 +33,11 @@ public class Standalone {
 			if (input.equals("stop")) {
 				break;
 			} else if (input.equals("getaddr")) {
-				String addr = server.get_address();
+				InetAddress addr = server.get_address();
 				if (addr == null)
-					addr = "Not connected";
-				cout.println(addr);
+					cout.println("Not connected");
+				else
+					cout.println(addr.getHostAddress());
 			} else if (input.equals("setaddr")) {
 				String addr = console.readLine("What address? ");
 				try {
@@ -42,13 +46,33 @@ public class Standalone {
 					cout.println("Error ending server: " + ie.getMessage());
 				}
 				try {
-					server.start_server(addr);
+					server.start_server(InetAddress.getByName(addr));
 					cout.println("Server is running on port "
 							+ server.get_port());
 				} catch (UnknownHostException uhe) {
 					cout.println("Unknown host: " + addr);
 				}
-
+			} else if (input.equals("getport")) {
+				if(server == null)
+					cout.println("Not connected");
+				else
+					cout.println(server.get_port());
+			} else if (input.equals("setport")) {
+				String port_string = console.readLine("What port? ");
+				try {
+					int port = Integer.parseInt(port_string);
+					InetAddress addr = server.get_address();
+					server.stop_server();
+					server.start_server(addr, port);
+					cout.println("Server is running on port "
+							+ server.get_port());
+				} catch (NumberFormatException nfe) {
+					cout.println("Not a vaild port number:" + port_string);
+				} catch (InterruptedException ie) {
+					cout.println("Error ending server: " + ie.getMessage());
+				} catch (UnknownHostException uhe) {
+					cout.println("Unknown host: " + uhe.getMessage());
+				}
 			} else if (input.equals("getdir")) {
 				cout.println(server.getdir());
 			} else if (input.equals("setdir")) {

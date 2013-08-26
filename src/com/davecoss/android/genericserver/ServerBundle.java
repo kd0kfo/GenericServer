@@ -26,11 +26,23 @@ public class ServerBundle {
 			return "";
 		return serverd.get_port();
 	}
-
-	public String get_address() {
+	
+	public void set_port(int port) {
 		if (serverd == null)
-			return "";
+			return;
+		serverd.set_port(port);
+	}
+
+	public InetAddress get_address() {
+		if (serverd == null)
+			return null;
 		return serverd.get_address();
+	}
+	
+	public void get_address(InetAddress address) {
+		if (serverd == null)
+			return;
+		serverd.set_address(address);
 	}
 
 	public String setdir(String dir) {
@@ -62,14 +74,19 @@ public class ServerBundle {
 		server_thread.start();
 	}
 
-	public void start_server(String address)
+	public void start_server(InetAddress address, int port)
 			throws java.net.UnknownHostException {
-		serverd = new GenericServer(InetAddress.getByName(address),
+		serverd = new GenericServer(address, port,
 				this.handler);
 		server_thread = new Thread(serverd);
 		server_thread.start();
 	}
 
+	public void start_server(InetAddress address)
+			throws java.net.UnknownHostException {
+		start_server(address, GenericServer.DEFAULT_PORT);
+	}
+	
 	public boolean is_running() {
 		if (this.serverd == null)
 			return false;

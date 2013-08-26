@@ -71,7 +71,7 @@ public class Console extends Activity {
 		String status = "";
 		try
 		{
-			server.start_server(address);
+			server.start_server(InetAddress.getByName(address));
 			msg = "IP is " + server.get_address();
 			status = "Status: Running";
 		}
