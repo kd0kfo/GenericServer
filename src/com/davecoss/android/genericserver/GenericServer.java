@@ -138,6 +138,15 @@ public class GenericServer implements Runnable {
 				handler.debug("GenericServer.process_request", err);
 				html_write("Error processing user request", err, STATUS_ERROR, output);
 			}
+		} else if (request.get(0).equals("info")) {
+			String err_msg = "Error getting server info";
+			try {
+				dump_config(raw_output);
+			} catch (Exception e) {
+				html_write(err_msg, err_msg, STATUS_ERROR, output);
+				handler.error("GenericServer.process_request", err_msg);
+				handler.traceback(e);
+			}
 		} else if (request.get(0).equals("favicon.ico")) {
 			InputStream ico_stream = this.getClass().getResourceAsStream("favicon.ico");
 			if(ico_stream == null)
@@ -560,9 +569,8 @@ public class GenericServer implements Runnable {
 		return this.has_write_permission;
 	}
 	
-	public void dump_config() throws FileNotFoundException, IOException
+	public void dump_config(OutputStream output) throws FileNotFoundException, IOException
 	{
-		String conf_filename = "server.conf";
 		Properties config = new Properties();
 		
 		config.setProperty("address", addr.getHostAddress());
@@ -571,7 +579,13 @@ public class GenericServer implements Runnable {
 			config.setProperty("userdir", userdir);
 		config.setProperty("has_write_permission", Boolean.toString(has_write_permission));
 		
-		config.store(new FileOutputStream(conf_filename), "Server Config");
+		config.store(output, "Server Config");
+	}
+	
+	public void dump_config() throws FileNotFoundException, IOException
+	{
+		String conf_filename = "server.conf";
+		dump_config(new FileOutputStream(conf_filename));
 	}
 	
 	public void load_config() throws FileNotFoundException, IOException
