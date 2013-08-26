@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Set;
 
 
 import org.json.simple.JSONObject;
@@ -571,6 +572,7 @@ public class GenericServer implements Runnable {
 	
 	public void dump_config(OutputStream output) throws FileNotFoundException, IOException
 	{
+		handler.debug("GenericServer.dump_config", "Saving Configuration");
 		Properties config = new Properties();
 		
 		// Server Information
@@ -580,6 +582,20 @@ public class GenericServer implements Runnable {
 			output.write("No\n".getBytes());
 		else
 			output.write("Yes\n".getBytes());
+		
+		Properties build_info = new BuildInfo().get_build_properties();
+		if(build_info != null)
+		{
+			handler.debug("GenericServer.dump_config", "Got Build Info");
+			Set<String> keys = build_info.stringPropertyNames();
+			Iterator<String> it = keys.iterator();
+			while(it.hasNext())
+			{
+				String key = it.next();
+				String prop_string = "#" + key + ": " + build_info.getProperty(key) + "\n";
+				output.write(prop_string.getBytes());
+			}
+		}
 		
 		output.write("#\n".getBytes());
 		
