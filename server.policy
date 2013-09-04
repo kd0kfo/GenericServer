@@ -1,0 +1,27 @@
+
+// Standard extensions get all permissions by default
+
+grant codeBase "file:${{java.ext.dirs}}/*" {
+	permission java.security.AllPermission;
+};
+
+// default permissions granted to all domains
+
+grant { 
+	// Socket listening needs to be allowed.
+	permission java.net.SocketPermission "localhost:1024-", "listen";
+	permission java.net.SocketPermission "awesome", "resolve";
+
+	// "standard" properies that can be read by anyone
+	permission java.util.PropertyPermission "java.version", "read";
+	permission java.util.PropertyPermission "java.vendor", "read";
+	permission java.util.PropertyPermission "java.vendor.url", "read";
+	permission java.util.PropertyPermission "java.class.version", "read";
+
+	permission java.lang.RuntimePermission "writeFileDescriptor";
+	permission java.lang.RuntimePermission "readFileDescriptor";
+
+	permission java.io.FilePermission "server.conf", "read";
+	permission java.io.FilePermission "server.conf", "write";
+};
+
