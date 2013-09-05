@@ -42,12 +42,6 @@ public class GenericServer implements Runnable {
 	public static final String DEFAULT_HOSTNAME = "localhost";
 	public static final int DEFAULT_PORT = 4242;
 	
-	// Status messages
-	private static final String STATUS_OK = "HTTP/1.1 200 Ok";
-	private static final String STATUS_FORBIDDEN = "HTTP/1.1 403 Forbidden";
-	private static final String STATUS_NOT_FOUND = "HTTP/1.1 403 Not Found";
-	private static final String STATUS_ERROR = "HTTP/1.1 500 Server Error";
-
 	public GenericServer(ServerHandler handler) {
 		this.handler = handler;
 		try {
@@ -79,85 +73,56 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public static void json_write(String request,
-			HashMap<String, String> content, PrintWriter output) {
-		JSONObject json_content = new JSONObject(content);
-		JSONObject json_data = new JSONObject();
-		json_data.put("content", json_content);
-		output.println(STATUS_OK);
-		output.println("Content-type: application/json");
-		output.println("");
-		output.println(json_data.toString());
-		output.println("");
-		output.flush();
-
-	}
-
-	public static void html_write(String title, String content, String status,
-			PrintWriter output) {
-		print_header(output, title, status);
-		output.println(content);
-		print_footer(output);
-		output.flush();
-	}
-
-	public static void html_write(String title, String content,
-			PrintWriter output) {
-		print_header(output, title, STATUS_OK);
-		output.println(content);
-		print_footer(output);
-		output.flush();
-	}
-
-	public void process_request(HTTPRequest client_request, OutputStream raw_output) 
+	public HTTPReply process_request(HTTPRequest client_request) 
 			throws EmptyRequest{
-		PrintWriter output = new PrintWriter(raw_output);
 		if(client_request == null)
 			throw new EmptyRequest();
 		String uri = client_request.get_path();
 		if (uri == null)
-			return;
+			return HTMLReply.invalid_request();
 
 		ArrayList<String> request = new ArrayList<String>(
 				Arrays.asList(uri.split("/")));
 
 		if (request.size() < 2) {
-			html_write("Welcome", "Welcome to the server.", output);
-			return;
+			return new HTMLReply("Welcome", "Welcome to the server.");
 		}
 		request.remove(0);
 		if (request.get(0).equals("date")) {
-			send_date(request, output);
+			return send_date(request);
 		} else if (request.get(0).equals("user") && request.size() > 1) {
 			try {
-				process_user_request(request, raw_output);	
+				return process_user_request(request);	
 			}
 			catch(HTTPError httpe)
 			{
 				String err = "Error Processing user request: " + httpe.getMessage();
 				handler.debug("GenericServer.process_request", err);
-				html_write("Error processing user request", err, STATUS_ERROR, output);
+				return new HTMLReply("Error processing user request", err, HTTPReply.STATUS_ERROR);
 			}
 		} else if (request.get(0).equals("info")) {
 			String err_msg = "Error getting server info";
 			try {
-				dump_config(raw_output);
+				return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
+						"HTTP/1.1 503 Service Unavailable");
+				//TODO: replace with stream or something else
+				//dump_config(raw_output);
 			} catch (Exception e) {
-				html_write(err_msg, err_msg, STATUS_ERROR, output);
 				handler.error("GenericServer.process_request", err_msg);
 				handler.traceback(e);
+				return new HTMLReply(err_msg, err_msg, HTTPReply.STATUS_ERROR);
 			}
 		} else if (request.get(0).equals("favicon.ico")) {
 			InputStream ico_stream = get_favicon();
 			if(ico_stream == null)
 			{
 				String no_favicon = "Favicon not found";
-				html_write(no_favicon, no_favicon, STATUS_NOT_FOUND, output);
+				return new HTMLReply(no_favicon, no_favicon, HTTPReply.STATUS_NOT_FOUND);
 			}
 			else
 			{
-				byte[] buffer = new byte[4096];
+				//TODO: Replace with stream reply
+				/* byte[] buffer = new byte[4096];
 				output.println("HTTP/1.1 200 Ok");
 				output.println("Content-Type: image/x-icon");
 				output.println("");
@@ -173,12 +138,16 @@ public class GenericServer implements Runnable {
 				{
 					String err = "Error Processing Favicon: " + ioe.getMessage();
 					handler.debug("GenericServer.process_request", err);
-					html_write("Error processing favicon", err, STATUS_ERROR, output);
+					return new HTMLReply("Error processing favicon", err, HTTPReply.STATUS_ERROR);
 				}
+				/**/
+				return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
+						"HTTP/1.1 503 Service Unavailable");
 			}
 		} else if (request.get(0).equals("echo")) {
-			process_echo(client_request, request, output);
-		} else if (request.get(0).equals("file")) {
+			return process_echo(client_request, request);
+		}/* else if (request.get(0).equals("file")) {
+			//TODO: Reimplement
 			try {
 				process_file(client_request, request, output);
 			}
@@ -194,13 +163,10 @@ public class GenericServer implements Runnable {
 				handler.error("GenericServer.process_request", err);
 				html_write("Error processing file", err, STATUS_ERROR, output);
 			}
-		} else {
-			html_write(request.get(0),
-					"You asked for (" + request.get(0) + ")", output);
-		}
-
-		output.flush();
-
+		}/**/
+		
+		return new HTMLReply(request.get(0),
+					"You asked for (" + request.get(0) + ")");
 	}
 
 	public static void print_header(PrintWriter output, String request,
@@ -229,14 +195,16 @@ public class GenericServer implements Runnable {
 					start_server();
 				Socket socket = listener.accept();
 				handler.info("GenericServer.run", "Opened socket on port " + port);
+				HTTPRequest request = null;
+				HTTPReply reply = null;
 				try {
 					OutputStream out = socket.getOutputStream();
 					BufferedReader input = new BufferedReader(new InputStreamReader(
 							new BoundedInputStream(socket.getInputStream(), UserFile.MAX_OUTFILE_SIZE)));
 					String input_text = input.readLine();
-					HTTPRequest request = null;
 					while (input_text != null
 							&& !Thread.currentThread().isInterrupted()) {
+						reply = HTMLReply.invalid_request();// Prove me wrong.
 						handler.info("GenericServer.run", "Client Said: " + input_text);
 						String[] request_tokens = input_text.split(" ");
 						int request_data_len = input_text.length();
@@ -288,7 +256,7 @@ public class GenericServer implements Runnable {
 									{
 										String err = "Too much post data sent. Sent: " + post_len;
 										handler.debug("GenericServer.run", err);
-										html_write("Error", err, STATUS_FORBIDDEN, new PrintWriter(out));
+										reply = new HTMLReply("Error", err, HTTPReply.STATUS_FORBIDDEN);
 										continue;
 									}		
 									char[] buffer = new char[post_len];
@@ -306,14 +274,20 @@ public class GenericServer implements Runnable {
 								}
 							}
 						}
-						process_request(request, out);
+						reply = process_request(request);
 						input.close();
 					}
 					catch(HTTPError httperr)
 					{
 						handler.error("GenericServer.run", "HTTP ERROR: " + httperr);
 						handler.traceback(httperr);
+						reply = new HTMLReply("ERROR", "Server Error", HTTPReply.STATUS_ERROR);
 					}
+					if(reply != null && !socket.isClosed())
+					{
+						reply.dump(new PrintWriter(out));
+					}
+					
 				} finally {
 					handler.info("GenericServer.run", "Closing socket");
 					socket.close();
@@ -392,7 +366,7 @@ public class GenericServer implements Runnable {
 		return (this.listener != null && !this.listener.isClosed());
 	}
 
-	private void send_date(ArrayList<String> request, PrintWriter output){
+	private HTTPReply send_date(ArrayList<String> request){
 		String date_string = "";
 		if (request.size() > 1 && request.get(1).equals("unixtime")) {
 			long unixtime = System.currentTimeMillis() / 1000L;
@@ -403,13 +377,16 @@ public class GenericServer implements Runnable {
 		if (request.get(request.size() - 1).equals("json")) {
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("date", date_string);
-			json_write(request.get(0), map, output);
-		} else {
-			html_write(request.get(0), date_string, output);
+			return JSONReply.fromHashmap(map);
 		}
+		
+		return new HTMLReply(request.get(0), date_string);
+		
 	}
 
-	private void process_user_request(ArrayList<String> request, OutputStream raw_output) throws HTTPError {
+	private HTTPReply process_user_request(ArrayList<String> request) throws HTTPError {
+		// TODO: Handle a Stream Reply
+		OutputStream raw_output = System.out;
 		PrintWriter output = new PrintWriter(raw_output);
 		String filename = request.get(1);
 		String err = "";
@@ -432,10 +409,12 @@ public class GenericServer implements Runnable {
 		}
 		
 		if (file == null) {
-			html_write("File error", err, "HTTP/1.1 401 Permission Denied",
-					output);
-			return;
+			return new HTMLReply("File error", err, "HTTP/1.1 401 Permission Denied");
 		}
+		
+		return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
+				"HTTP/1.1 503 Service Unavailable");
+		/*
 		byte[] buffer = new byte[4096];
 
 		output.println(STATUS_OK);
@@ -458,9 +437,10 @@ public class GenericServer implements Runnable {
 		}
 		output.println("");
 		output.flush();
+		/**/
 	}
 
-	private void process_echo(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) {
+	private HTTPReply process_echo(HTTPRequest client_request, ArrayList<String> request) {
 		String echo = "";
 		if (request.size() > 1)
 			echo = request.get(1);
@@ -472,22 +452,22 @@ public class GenericServer implements Runnable {
 				HashMap<String, String> post_data = client_request.get_full_post_data();
 				content.putAll(post_data);
 			}
-			json_write(echo, content, output);
+			return JSONReply.fromHashmap(content);
 			
 		} else {
 			if(!client_request.has_post_data())
 			{
-				html_write(echo, echo, output);
+				return new HTMLReply(echo, echo);
 			}
 			else
 			{
 				String post_string = post_data_as_string(client_request);
-				html_write(echo, echo + "\nPOST:\n" + post_string, output);
+				return new HTMLReply(echo, echo + "\nPOST:\n" + post_string);
 			}
 		}
 	}
 
-	private void process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError, IOException {
+	private HTTPReply process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError, IOException {
 		
 		if(!this.has_write_permission )
 			throw new FileError("File Writing Not Allowed");
@@ -541,7 +521,7 @@ public class GenericServer implements Runnable {
 		handler.info("GenericServer.process_file", msg);
 
 	
-		html_write("Wrote to file", msg, output);
+		return new HTMLReply("Wrote to file", msg);
 	}
 
 
