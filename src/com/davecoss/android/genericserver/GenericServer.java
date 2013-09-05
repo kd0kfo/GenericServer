@@ -195,10 +195,10 @@ public class GenericServer implements Runnable {
 					start_server();
 				Socket socket = listener.accept();
 				handler.info("GenericServer.run", "Opened socket on port " + port);
+				OutputStream out = socket.getOutputStream();
 				HTTPRequest request = null;
 				HTTPReply reply = null;
 				try {
-					OutputStream out = socket.getOutputStream();
 					BufferedReader input = new BufferedReader(new InputStreamReader(
 							new BoundedInputStream(socket.getInputStream(), UserFile.MAX_OUTFILE_SIZE)));
 					String input_text = input.readLine();
@@ -275,7 +275,6 @@ public class GenericServer implements Runnable {
 							}
 						}
 						reply = process_request(request);
-						input.close();
 					}
 					catch(HTTPError httperr)
 					{
@@ -283,20 +282,22 @@ public class GenericServer implements Runnable {
 						handler.traceback(httperr);
 						reply = new HTMLReply("ERROR", "Server Error", HTTPReply.STATUS_ERROR);
 					}
+										
+				} finally {
 					if(reply != null && !socket.isClosed())
 					{
+						handler.debug("GenericServer.run", "Sending reply");
 						reply.dump(new PrintWriter(out));
 					}
-					
-				} finally {
 					handler.info("GenericServer.run", "Closing socket");
 					socket.close();
 					handler.info("GenericServer.run", "Socket closed");
 				}
 			} catch (SocketException se) {
-				handler.error("GenericServer.run", "Socket closed");
-				if(!se.getMessage().equals("Socket closed"))
+				if(!se.getMessage().equals("Socket closed") && !se.getMessage().equals("Socket is closed")) {
+					handler.error("GenericServer.run", "Socket closed");
 					handler.traceback(se);
+				}
 			} catch (IOException ioe) {
 				handler.error("GenericServer.run", "IOException: " + ioe.getMessage());
 				handler.traceback(ioe);
