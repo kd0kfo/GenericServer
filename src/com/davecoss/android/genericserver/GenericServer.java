@@ -3,7 +3,7 @@ package com.davecoss.android.genericserver;
 import java.io.File;
 import java.io.IOException;
 import java.io.BufferedReader;
-
+import java.io.ByteArrayOutputStream;
 import org.apache.commons.io.input.BoundedInputStream;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -103,10 +103,9 @@ public class GenericServer implements Runnable {
 		} else if (request.get(0).equals("info")) {
 			String err_msg = "Error getting server info";
 			try {
-				return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
-						"HTTP/1.1 503 Service Unavailable");
-				//TODO: replace with stream or something else
-				//dump_config(raw_output);
+				ByteArrayOutputStream config_buffer = new ByteArrayOutputStream();
+			 	dump_config(config_buffer);
+				return new HTMLReply("Current config", config_buffer.toString().replaceAll("\n","<br/>\n"));
 			} catch (Exception e) {
 				handler.error("GenericServer.process_request", err_msg);
 				handler.traceback(e);
@@ -121,49 +120,30 @@ public class GenericServer implements Runnable {
 			}
 			else
 			{
-				//TODO: Replace with stream reply
-				/* byte[] buffer = new byte[4096];
-				output.println("HTTP/1.1 200 Ok");
-				output.println("Content-Type: image/x-icon");
-				output.println("");
-				output.flush();
-				try{
-					while(ico_stream.read(buffer) != -1)
-					{
-						raw_output.write(buffer);
-					}
-					raw_output.flush();
-				}
-				catch(IOException ioe)
-				{
-					String err = "Error Processing Favicon: " + ioe.getMessage();
-					handler.debug("GenericServer.process_request", err);
-					return new HTMLReply("Error processing favicon", err, HTTPReply.STATUS_ERROR);
-				}
-				/**/
-				return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
-						"HTTP/1.1 503 Service Unavailable");
+				 ImageReply retval = new ImageReply();
+				 retval.set_input_stream(ico_stream);
+				 retval.set_image_type("x-icon");
+				 return retval;
 			}
 		} else if (request.get(0).equals("echo")) {
 			return process_echo(client_request, request);
-		}/* else if (request.get(0).equals("file")) {
-			//TODO: Reimplement
+		} else if (request.get(0).equals("file")) {
 			try {
-				process_file(client_request, request, output);
+				return process_file(client_request, request);
 			}
 			catch(IOException ioe)
 			{
 				String err = "Error Processing File: " + ioe.getMessage();
 				handler.debug("GenericServer.process_request", err);
-				html_write("Error processing file", err, STATUS_ERROR, output);
+				return new HTMLReply("Error processing file", err, HTTPReply.STATUS_ERROR);
 			}
 			catch(HTTPError httpe)
 			{
 				String err = "Error Processing File: " + httpe.getMessage();
 				handler.error("GenericServer.process_request", err);
-				html_write("Error processing file", err, STATUS_ERROR, output);
+				return new HTMLReply("Error processing file", err, HTTPReply.STATUS_ERROR);
 			}
-		}/**/
+		}
 		
 		return new HTMLReply(request.get(0),
 					"You asked for (" + request.get(0) + ")");
@@ -287,7 +267,7 @@ public class GenericServer implements Runnable {
 					if(reply != null && !socket.isClosed())
 					{
 						handler.debug("GenericServer.run", "Sending reply");
-						reply.dump(new PrintWriter(out));
+						reply.write(out);
 					}
 					handler.info("GenericServer.run", "Closing socket");
 					socket.close();
@@ -386,7 +366,6 @@ public class GenericServer implements Runnable {
 	}
 
 	private HTTPReply process_user_request(ArrayList<String> request) throws HTTPError {
-		// TODO: Handle a Stream Reply
 		OutputStream raw_output = System.out;
 		PrintWriter output = new PrintWriter(raw_output);
 		String filename = request.get(1);
@@ -413,33 +392,12 @@ public class GenericServer implements Runnable {
 			return new HTMLReply("File error", err, "HTTP/1.1 401 Permission Denied");
 		}
 		
-		return new HTMLReply("To be reimplemented", "This is temporarily unavailable", 
-				"HTTP/1.1 503 Service Unavailable");
-		/*
-		byte[] buffer = new byte[4096];
+		FileReply retval = new FileReply();
+		retval.set_file_type(filetype);
+		retval.set_input_stream(file);
 
-		output.println(STATUS_OK);
-		if (filetype == UserFile.FileType.JPEG)
-			output.println("Content-type: image/jpeg");
-		else if (filetype == UserFile.FileType.HTML)
-			output.println("Content-type: text/html");
-		else
-			output.println("Content-type: text/plain");
-		output.println("");
-		output.flush();
-		try {
-			int nchars = -1;
-			while ((nchars = file.read(buffer, 0, buffer.length)) != -1) {
-				raw_output.write(buffer, 0, nchars);
-			}
-			raw_output.flush();
-		} catch (IOException ioe) {
-			output.println("Error reading file: " + ioe.getMessage());
-		}
-		output.println("");
-		output.flush();
-		/**/
-	}
+		return retval;
+	}		
 
 	private HTTPReply process_echo(HTTPRequest client_request, ArrayList<String> request) {
 		String echo = "";
@@ -468,7 +426,7 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	private HTTPReply process_file(HTTPRequest client_request, ArrayList<String> request, PrintWriter output) throws HTTPError, IOException {
+	private HTTPReply process_file(HTTPRequest client_request, ArrayList<String> request) throws HTTPError, IOException {
 		
 		if(!this.has_write_permission )
 			throw new FileError("File Writing Not Allowed");

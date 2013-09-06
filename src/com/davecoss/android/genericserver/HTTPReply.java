@@ -1,6 +1,8 @@
 package com.davecoss.android.genericserver;
 
 import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.OutputStream;
 
 
 public class HTTPReply {
@@ -15,6 +17,12 @@ public class HTTPReply {
 	protected String title;
 	protected String status;
 	
+	public HTTPReply() {
+		this.content = "";
+		this.title = "";
+		this.status = STATUS_OK;
+	}
+
 	public HTTPReply(String content) {
 		this.content = content;
 		this.title = content;
@@ -78,6 +86,10 @@ public class HTTPReply {
 		output.println(this.content);
 		output.println("");
 		output.flush();
+	}
+
+	public void write(OutputStream output) throws java.io.IOException {
+		dump(new PrintWriter(output));
 	}
 	
 }
