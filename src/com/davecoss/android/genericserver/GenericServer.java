@@ -366,9 +366,16 @@ public class GenericServer implements Runnable {
 	}
 
 	private HTTPReply process_user_request(ArrayList<String> request) throws HTTPError {
+		if(request == null || request.size() < 2)
+			return HTMLReply.invalid_request();	
+
 		OutputStream raw_output = System.out;
 		PrintWriter output = new PrintWriter(raw_output);
-		String filename = request.get(1);
+		File requested_file = new File(request.get(1));	
+		for(int i = 2;i<request.size();i++)
+			requested_file = new File(requested_file, request.get(i));
+		String filename = requested_file.getPath();
+
 		String err = "";
 		if (userdir == null)
 			throw new HTTPError("User directory not defined.");
