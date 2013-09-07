@@ -23,6 +23,7 @@ public class Standalone {
 		// Define args
 		Options options = new Options();
 		options.addOption("c", false, "Use config file.");
+		options.addOption("ssl", false, "Use SSL");
 		
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -39,6 +40,7 @@ public class Standalone {
 		
 		// Parse args
 		boolean use_initial_config = cmd.hasOption("c");
+		boolean use_ssl = cmd.hasOption("ssl");
 		
 		StandaloneHandler handler = new Standalone().new StandaloneHandler();
 		ServerBundle server = new ServerBundle(handler);
@@ -57,7 +59,11 @@ public class Standalone {
 		if(use_initial_config)
 			server.load_config();
 		else
-			server.start_server();
+		{
+			if(use_ssl)
+				handler.debug("Standalone.main", "Starting server with SSL");
+			server.start_server(use_ssl);
+		}
 		cout.println("Server is running on port " + server.get_port());
 
 		String input;

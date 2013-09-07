@@ -78,14 +78,25 @@ public class ServerBundle {
 		
 	}
 
-	public void init_server() {
-		serverd = new GenericServer(this.handler);
+	public void init_server(boolean use_ssl) {
+		if(use_ssl)
+			serverd = new SSLServer(this.handler);
+		else
+			serverd = new GenericServer(this.handler);
 		server_thread = new Thread(serverd);
 	}
 	
-	public void start_server() {
-		init_server();
+	public void init_server() {
+		init_server(false);
+	}
+	
+	public void start_server(boolean use_ssl) {
+		init_server(use_ssl);
 		start();
+	}
+	
+	public void start_server() {
+		start_server(false);
 	}
 
 	public void start_server(InetAddress address, int port)

@@ -25,15 +25,17 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.net.ssl.SSLServerSocketFactory;
+
 public class GenericServer implements Runnable {
 
-	private int port = DEFAULT_PORT;
-	private ServerSocket listener;
-	private String userdir = null;
-	private InetAddress addr = null;
-	private ServerHandler handler;
-	private String outfile_name = "output.dat";
-	private boolean has_write_permission = false;
+	protected int port = DEFAULT_PORT;
+	protected ServerSocket listener;
+	protected String userdir = null;
+	protected InetAddress addr = null;
+	protected ServerHandler handler;
+	protected String outfile_name = "output.dat";
+	protected boolean has_write_permission = false;
 
 	public static final String DEFAULT_HOSTNAME = "localhost";
 	public static final int DEFAULT_PORT = 4242;
@@ -165,8 +167,9 @@ public class GenericServer implements Runnable {
 
 	@Override
 	public void run() {
+		boolean has_fatal_error = false;
 		handler.info("GenericServer.run", "Thread Run Called");
-		while (!Thread.currentThread().isInterrupted()) {
+		while (!Thread.currentThread().isInterrupted() && !has_fatal_error) {
 			try {
 				if (this.listener == null)
 					start_server();
@@ -270,6 +273,11 @@ public class GenericServer implements Runnable {
 					socket.close();
 					handler.info("GenericServer.run", "Socket closed");
 				}
+			} catch(javax.net.ssl.SSLException ssle) {
+				handler.error("GenericServer.run", "Fatal error with SSL Socket");
+				handler.traceback(ssle);
+				handler.error("GenericServer.run", "Halting thread");
+				has_fatal_error = true;
 			} catch (SocketException se) {
 				if(!se.getMessage().equals("Socket closed") && !se.getMessage().equals("Socket is closed")) {
 					handler.error("GenericServer.run", "Socket closed");
@@ -282,20 +290,29 @@ public class GenericServer implements Runnable {
 		}// while not interrupted
 	}
 
-	private void start_server() throws IOException {
+	protected ServerSocket get_new_socket() throws IOException {
+		handler.debug("GenericServer.get_new_socket", "Creating new Socket");
+		return new ServerSocket(this.port, 0, this.addr);
+	}
+	
+	protected void start_server() throws IOException, javax.net.ssl.SSLException {
 		handler.info("GenericServer.start_server", "Server starting " 
 				+ this.addr.getHostAddress() + ":" + this.port);
 		try {
 			if(listener != null && !listener.isClosed())
 				listener.close();
-			listener = new ServerSocket(this.port, 0, this.addr);
+			listener = get_new_socket();
+		} catch(javax.net.ssl.SSLException ssle) {
+			handler.error("GenericServer.start_server", "IOException: " + ssle.getMessage());
+			handler.traceback(ssle);
+			throw ssle;
 		} catch (IOException ioe) {
 			handler.error("GenericServer.start_server", "IOException: " + ioe.getMessage());
 			handler.traceback(ioe);
 		}
 	}
 
-	private void start_server(InetAddress addr, int port) throws IOException {
+	protected void start_server(InetAddress addr, int port) throws IOException {
 		this.port = port;
 		this.addr = addr;
 		start_server();
@@ -344,12 +361,12 @@ public class GenericServer implements Runnable {
 		userdir = dir;
 		return dir;
 	}
-
+	
 	public boolean is_running() {
 		return (this.listener != null && !this.listener.isClosed());
 	}
 
-	private HTTPReply send_date(ArrayList<String> request){
+	protected HTTPReply send_date(ArrayList<String> request){
 		String date_string = "";
 		if (request.size() > 1 && request.get(1).equals("unixtime")) {
 			long unixtime = System.currentTimeMillis() / 1000L;
@@ -367,7 +384,7 @@ public class GenericServer implements Runnable {
 		
 	}
 
-	private HTTPReply process_user_request(ArrayList<String> request) throws HTTPError {
+	protected HTTPReply process_user_request(ArrayList<String> request) throws HTTPError {
 		if(request == null || request.size() < 2)
 			return HTMLReply.invalid_request();	
 
@@ -406,7 +423,7 @@ public class GenericServer implements Runnable {
 		return retval;
 	}		
 
-	private HTTPReply process_echo(HTTPRequest client_request, ArrayList<String> request) {
+	protected HTTPReply process_echo(HTTPRequest client_request, ArrayList<String> request) {
 		String echo = "";
 		if (request.size() > 1)
 			echo = request.get(1);
@@ -433,7 +450,7 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	private HTTPReply process_file(HTTPRequest client_request, ArrayList<String> request) throws HTTPError, IOException {
+	protected HTTPReply process_file(HTTPRequest client_request, ArrayList<String> request) throws HTTPError, IOException {
 		
 		if(!this.has_write_permission )
 			throw new FileError("File Writing Not Allowed");
