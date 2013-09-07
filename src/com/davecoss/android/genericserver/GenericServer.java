@@ -25,10 +25,6 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
-
-import org.json.simple.JSONObject;
-
-
 public class GenericServer implements Runnable {
 
 	private int port = DEFAULT_PORT;
@@ -262,7 +258,7 @@ public class GenericServer implements Runnable {
 						handler.traceback(httperr);
 						reply = new HTMLReply("ERROR", "Server Error", HTTPReply.STATUS_ERROR);
 					}
-										
+					input.close();
 				} finally {
 					if(reply != null && !socket.isClosed())
 					{
@@ -369,8 +365,6 @@ public class GenericServer implements Runnable {
 		if(request == null || request.size() < 2)
 			return HTMLReply.invalid_request();	
 
-		OutputStream raw_output = System.out;
-		PrintWriter output = new PrintWriter(raw_output);
 		File requested_file = new File(request.get(1));	
 		for(int i = 2;i<request.size();i++)
 			requested_file = new File(requested_file, request.get(i));

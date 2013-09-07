@@ -1,8 +1,5 @@
 package com.davecoss.android.genericserver;
 
-import java.io.PrintWriter;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 public class ImageReply extends StreamReply {
 
