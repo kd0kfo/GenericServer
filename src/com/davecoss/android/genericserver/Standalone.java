@@ -7,11 +7,39 @@ import java.net.UnknownHostException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
+
 import com.davecoss.android.genericserver.ServerBundle;
 
 public class Standalone {
 
 	public static void main(String[] args) throws IOException {
+		
+		// Define args
+		Options options = new Options();
+		options.addOption("c", false, "Use config file.");
+		
+		CommandLineParser parser = new GnuParser();
+		CommandLine cmd = null;
+		try
+		{
+			cmd = parser.parse( options, args);
+		}
+		catch(ParseException pe)
+		{
+			System.err.println("Error parsing command line arguments.");
+			System.err.println(pe.getMessage());
+			System.exit(1);
+		}
+		
+		// Parse args
+		boolean use_initial_config = cmd.hasOption("c");
+		
 		StandaloneHandler handler = new Standalone().new StandaloneHandler();
 		ServerBundle server = new ServerBundle(handler);
 		Console console = System.console();
@@ -25,7 +53,11 @@ public class Standalone {
 		
 		PrintWriter cout = console.writer();
 
-		server.start_server();
+		// Start up server
+		if(use_initial_config)
+			server.load_config();
+		else
+			server.start_server();
 		cout.println("Server is running on port " + server.get_port());
 
 		String input;
@@ -130,7 +162,8 @@ public class Standalone {
 					}
 				}
 			} else {
-				cout.println("Unknown: " + input);
+				if(input.trim().length() > 0)
+					cout.println("Unknown: " + input);
 			}
 		}
 		cout.println("Stopping");
