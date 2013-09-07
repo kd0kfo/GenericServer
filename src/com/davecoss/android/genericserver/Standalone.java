@@ -120,7 +120,10 @@ public class Standalone {
 				{
 					try
 					{
+						if(server.is_running())
+							server.stop_server();
 						server.load_config();
+						//server.start();
 					} catch(Exception e) {
 						cout.println("Could not load configuration");
 						handler.traceback(e);

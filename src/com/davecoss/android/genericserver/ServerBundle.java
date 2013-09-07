@@ -58,20 +58,34 @@ public class ServerBundle {
 	}
 
 	public void stop_server() throws IOException, InterruptedException {
+		handler.debug("Standalone.stop_server", "Stopping Server");
+		
 		if (server_thread != null)
+		{
+			handler.info("Standalone.stop_server", "Stopping Thread");
 			server_thread.interrupt();
+		}
 		if (serverd != null)
 			serverd.stop_server();
 		if (server_thread != null)
+		{
 			server_thread.join();
+			handler.debug("Standalone.stop_server", "Thread Stopped");
+		}
 		server_thread = null;
 		serverd = null;
+		handler.info("Standalone.stop_server", "Server stopped");
+		
 	}
 
-	public void start_server() {
+	public void init_server() {
 		serverd = new GenericServer(this.handler);
 		server_thread = new Thread(serverd);
-		server_thread.start();
+	}
+	
+	public void start_server() {
+		init_server();
+		start();
 	}
 
 	public void start_server(InetAddress address, int port)
@@ -116,8 +130,17 @@ public class ServerBundle {
 	
 	public void load_config() throws FileNotFoundException, IOException 
 	{
+		/*
 		if(this.serverd == null)
-			return;
-		this.serverd.load_config();
+			init_server();
+		/**/
+		handler.info("Standalone.load_config", "Creating new server");
+		serverd = new GenericServer(this.handler);
+		serverd.stop_server();
+		handler.info("Standalone.load_config", "Loading config");
+		serverd.load_config();
+		handler.info("Standalone.load_config", "Starting thread");
+		server_thread = new Thread(serverd);
+		start();
 	}
 }

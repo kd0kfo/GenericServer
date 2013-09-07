@@ -165,6 +165,7 @@ public class GenericServer implements Runnable {
 
 	@Override
 	public void run() {
+		handler.info("GenericServer.run", "Thread Run Called");
 		while (!Thread.currentThread().isInterrupted()) {
 			try {
 				if (this.listener == null)
@@ -175,6 +176,7 @@ public class GenericServer implements Runnable {
 				HTTPRequest request = null;
 				HTTPReply reply = null;
 				try {
+					@SuppressWarnings("resource") // This will be closed with socket.close()
 					BufferedReader input = new BufferedReader(new InputStreamReader(
 							new BoundedInputStream(socket.getInputStream(), UserFile.MAX_OUTFILE_SIZE)));
 					String input_text = input.readLine();
@@ -258,7 +260,6 @@ public class GenericServer implements Runnable {
 						handler.traceback(httperr);
 						reply = new HTMLReply("ERROR", "Server Error", HTTPReply.STATUS_ERROR);
 					}
-					input.close();
 				} finally {
 					if(reply != null && !socket.isClosed())
 					{
@@ -282,6 +283,8 @@ public class GenericServer implements Runnable {
 	}
 
 	private void start_server() throws IOException {
+		handler.info("GenericServer.start_server", "Server starting " 
+				+ this.addr.getHostAddress() + ":" + this.port);
 		try {
 			if(listener != null && !listener.isClosed())
 				listener.close();
@@ -301,7 +304,10 @@ public class GenericServer implements Runnable {
 	public void stop_server() {
 		if (this.listener != null && !this.listener.isClosed()) {
 			try {
+				handler.info("GenericServer.stop_server", "Closing ServerSocket");
 				this.listener.close();
+				handler.info("GenericServer.stop_server", "ServerSocket Closed");
+				
 			} catch (IOException ioe) {
 				handler.error("GenericServer.stop_server", "Could not close socket listener: " + ioe.getMessage());
 				handler.traceback(ioe);
@@ -573,11 +579,6 @@ public class GenericServer implements Runnable {
 		has_write_permission = Boolean.parseBoolean(val);
 		
 		handler.debug("GenericServer.load_config", "Loaded configuration from " + conf_filename);
-		handler.debug("GenericServer.load_config", "Restarting Server");
-		
-		stop_server();
-		start_server();
-		
 	}
 	
 	public InputStream get_favicon() {
