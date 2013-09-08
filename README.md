@@ -15,3 +15,7 @@ The following java libraries are required. All libraries are Open Source and the
 * Apache Commons IO (http://commons.apache.org/proper/commons-io/) which is available under the Apache License v2.0.
 * Apache Commons CLI (http://commons.apache.org/proper/commons-cli/) which is available under the Apache License v2.0. Only required by standalone version.
 
+License
+-------
+
+With the exception of third-party libraries in the libs/ directory (see Requires), everything may be used under the terms of the GNU General Public License version 3. For details see the LICENSE file or go to http://www.gnu.org/licenses/gpl.html
