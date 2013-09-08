@@ -7,10 +7,12 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 public class SSLServer extends GenericServer {
 
@@ -42,24 +44,32 @@ public class SSLServer extends GenericServer {
 		
 		char[] pass = handler.get_password();
 		FileInputStream keyfilestream = new FileInputStream(keyfile);
+		SSLServerSocketFactory sslserversocketfactory = null;
 		try {
 			KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 			keyStore.load(keyfilestream, pass);
 			KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
 					KeyManagerFactory.getDefaultAlgorithm());
 			keyManagerFactory.init(keyStore, pass);
-			SSLContext sslContext = SSLContext.getDefault();
-			SSLServerSocketFactory sslserversocketfactory = sslContext.getServerSocketFactory();
+			TrustManagerFactory trust = TrustManagerFactory.getInstance("SunX509");
+            trust.init(keyStore);
+			SSLContext sslContext = SSLContext.getInstance("TLS");//SSLContext.getDefault();
+			sslContext.init(keyManagerFactory.getKeyManagers(), trust.getTrustManagers(), new SecureRandom());
+			sslserversocketfactory = sslContext.getServerSocketFactory();
 			
-			return sslserversocketfactory.createServerSocket(port, 0, addr);
 		} catch (Exception e) {
 			handler.error("ServerSocket.get_new_socket", "Error Starting SSL Socket");
 			handler.traceback(e);
-			throw new IOException(e.getMessage());
+			throw new HTTPError(e.getMessage());
 		} finally {
 			if(keyfilestream != null)
 				keyfilestream.close();
 		}
+		if(sslserversocketfactory == null)
+			throw new HTTPError("Error creating SSL Socket Factory.");
+		
+		return sslserversocketfactory.createServerSocket(port, 0, addr);
+
 	}
 
 }
