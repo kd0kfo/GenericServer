@@ -143,15 +143,14 @@ public class ServerBundle {
 		this.serverd.dump_config();
 	}
 	
-	public void load_config() throws FileNotFoundException, IOException 
+	public void load_config() throws FileNotFoundException, IOException {
+		load_config(false);
+	}
+	
+	public void load_config(boolean use_ssl) throws FileNotFoundException, IOException 
 	{
-		/*
-		if(this.serverd == null)
-			init_server();
-		/**/
 		handler.info("Standalone.load_config", "Creating new server");
-		serverd = new GenericServer(this.handler);
-		serverd.stop_server();
+		init_server(use_ssl);
 		handler.info("Standalone.load_config", "Loading config");
 		serverd.load_config();
 		handler.info("Standalone.load_config", "Starting thread");

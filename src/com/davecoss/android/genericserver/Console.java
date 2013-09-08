@@ -220,6 +220,7 @@ public class Console extends Activity {
 		}
 
 		public char[] get_password() throws HTTPError {
+			// TODO: Implement dialog
 			return "pass123".toCharArray();
 		}
 	}

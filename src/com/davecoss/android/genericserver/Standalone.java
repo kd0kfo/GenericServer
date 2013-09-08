@@ -64,7 +64,13 @@ public class Standalone {
 
 		// Start up server
 		if(use_initial_config)
-			server.load_config();
+		{
+			server.load_config(use_ssl);
+			handler.info("Standalone.main", "Waiting for server start");
+			while(!server.is_running())
+				continue;
+			cout.println("Server is running on port " + server.get_port());
+		}
 		else
 		{
 			if(use_ssl)
@@ -175,7 +181,7 @@ public class Standalone {
 					{
 						if(server.is_running())
 							server.stop_server();
-						server.load_config();
+						server.load_config(use_ssl);
 						//server.start();
 					} catch(Exception e) {
 						cout.println("Could not load configuration");
