@@ -32,7 +32,7 @@ public class Console extends Activity {
 		if(this.server == null)
 			server = new ServerBundle(handler);
 		if(!this.server.is_running())
-			this.start_server(null);
+			this.start_server("localhost");
 		
 		
 	}
@@ -72,18 +72,22 @@ public class Console extends Activity {
 		try
 		{
 			server.start_server(InetAddress.getByName(address));
+			while(!server.is_running())
+				continue;
 			msg = "IP is " + server.get_address();
 			status = "Status: Running";
 		}
 		catch(UnknownHostException nhe)
 		{
-			Log.e("Console", "Unknown Host: " + nhe.getMessage());
+			handler.error("Console.start_server", "Unknown Host Exception");
+			handler.traceback(nhe);
 			msg = "Could not start server: " + nhe.getMessage();
 			status = "Status: Failed";
 		}
 		catch(Exception e)
 		{
-			Log.e("Console", "Unknown Host: " + e.getMessage());
+			handler.error("Console.start_server", "Exception");
+			handler.traceback(e);
 			msg = "Could not start server: " + e.getMessage();
 			status = "Status: Failed";
 		}
@@ -216,7 +220,7 @@ public class Console extends Activity {
 		}
 
 		public void traceback(Exception e) {
-			Log.getStackTraceString(e);
+			this.error("STACKTRACE", Log.getStackTraceString(e));
 		}
 
 		public char[] get_password() throws HTTPError {

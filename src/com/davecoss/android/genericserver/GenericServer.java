@@ -337,9 +337,6 @@ public class GenericServer implements Runnable {
 	}
 	
 	public boolean is_running() {
-		handler.info("GenericServer.is_running", "listener is null? " + Boolean.toString(this.listener == null));
-		if(this.listener != null)
-			handler.info("GenericServer.is_running", "listener is closed? " + Boolean.toString(this.listener.isClosed()));
 		return (this.listener != null && !this.listener.isClosed());
 	}
 
