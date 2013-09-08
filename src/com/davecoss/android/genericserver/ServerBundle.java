@@ -44,7 +44,7 @@ public class ServerBundle {
 		return serverd.get_address();
 	}
 	
-	public void get_address(InetAddress address) {
+	public void set_address(InetAddress address) {
 		if (serverd == null)
 			return;
 		serverd.set_address(address);
@@ -83,22 +83,28 @@ public class ServerBundle {
 		
 	}
 
-	public void init_server(File keystore) throws UnknownHostException {
+	public void init_server(InetAddress addr, int port, File keystore)
+			throws UnknownHostException {
 		if(keystore != null)
 		{
-			SSLServer ssl = new SSLServer(this.handler);
+			SSLServer ssl = new SSLServer(addr, port, this.handler);
 			ssl.set_keystore(keystore);
 			serverd = ssl;
 		}
 		else
 		{
-			serverd = new GenericServer(this.handler);
+			serverd = new GenericServer(addr, port, this.handler);
 		}
 		server_thread = new Thread(serverd);
 	}
 	
+	public void init_server(File keystore)
+			throws UnknownHostException {
+		init_server(InetAddress.getByName("localhost"), GenericServer.DEFAULT_PORT, keystore);
+	}
+	
 	public void init_server() throws UnknownHostException {
-		init_server(null);
+		init_server((File)null);
 	}
 	
 	public void start_server(File keystore) throws UnknownHostException {
@@ -110,12 +116,15 @@ public class ServerBundle {
 		start_server((File)null);
 	}
 
+	public void start_server(InetAddress address, int port, File keystore)
+			throws java.net.UnknownHostException {
+		init_server(address, port, keystore);
+		start();
+	}
+	
 	public void start_server(InetAddress address, int port)
 			throws java.net.UnknownHostException {
-		serverd = new GenericServer(address, port,
-				this.handler);
-		server_thread = new Thread(serverd);
-		start();
+		start_server(address, port, (File)null);
 	}
 
 	public void start_server(InetAddress address)

@@ -11,5 +11,7 @@
     <string name="user_dir">"User Directory: "</string>
     <string name="txt_messages">Messages</string>
     <string name="lbl_write_permission">User Can Write:</string>
+    <string name="hint_password">Password</string>
+    <string name="btn_create_keystore">New Keystore</string>
 
 </resources>

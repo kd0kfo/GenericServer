@@ -192,6 +192,23 @@ public class Console extends Activity {
 		status.setText(msg);
 	}
 	
+	private File get_keystore() {
+		String state = Environment.getExternalStorageState();
+    	boolean can_read = false;
+    	if (Environment.MEDIA_MOUNTED.equals(state)) {
+    	    // We can read and write the media
+    		can_read = true;
+    	} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+    	    // We can only read the media
+    	    can_read = true;
+    	} 
+    	if(!can_read)
+    		return null;
+    	
+    	File dir = Environment.getExternalStorageDirectory();
+    	return new File(dir, "server.keystore");
+	}
+	
 	public void setaddr(View view)
 	{
 		TextView txt_addr = (TextView)findViewById(R.id.txt_addr);
@@ -199,7 +216,16 @@ public class Console extends Activity {
 		this.stop_server(view);
 		if(this.server == null)
 			this.server = new ServerBundle(handler);
-		this.start_server(addr);
+		try {
+			File keystore = get_keystore();
+			if(!keystore.exists())
+				keystore = null; // Null indicates use non-ssl
+			server.start_server(InetAddress.getByName(addr), GenericServer.DEFAULT_PORT, keystore);
+		} catch(UnknownHostException uhe) {
+			handler.error("Console.setaddr", "Unknown Host Error");
+			handler.traceback(uhe);
+			status_message("Unknown host: " + addr);
+		}
 	}
 	
 	public class AndroidHandler implements ServerHandler

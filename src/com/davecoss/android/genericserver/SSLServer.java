@@ -55,7 +55,7 @@ public class SSLServer extends GenericServer {
 			KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
 					KeyManagerFactory.getDefaultAlgorithm());
 			keyManagerFactory.init(keyStore, pass);
-			TrustManagerFactory trust = TrustManagerFactory.getInstance("SunX509");
+			TrustManagerFactory trust = TrustManagerFactory.getInstance("X509");
             trust.init(keyStore);
 			SSLContext sslContext = SSLContext.getInstance("TLS");//SSLContext.getDefault();
 			sslContext.init(keyManagerFactory.getKeyManagers(), trust.getTrustManagers(), new SecureRandom());
@@ -75,5 +75,4 @@ public class SSLServer extends GenericServer {
 		return sslserversocketfactory.createServerSocket(port, 0, addr);
 
 	}
-
 }
