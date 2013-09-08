@@ -108,7 +108,7 @@ public class ServerBundle {
 		serverd = new GenericServer(address, port,
 				this.handler);
 		server_thread = new Thread(serverd);
-		server_thread.start();
+		start();
 	}
 
 	public void start_server(InetAddress address)

@@ -45,14 +45,19 @@ public class GenericServer implements Runnable {
 	public GenericServer(ServerHandler handler) throws UnknownHostException {
 		this.handler = handler;
 		this.addr = InetAddress.getByName("localhost");
+		this.port = DEFAULT_PORT;
 	}
 
 	public GenericServer(InetAddress addr, ServerHandler handler) {
 		this.handler = handler;
+		this.port = DEFAULT_PORT;
+		this.addr = addr;
 	}
 	
 	public GenericServer(InetAddress addr, int port, ServerHandler handler) {
 		this.handler = handler;
+		this.port = port;
+		this.addr = addr;
 	}
 
 	public HTTPReply process_request(HTTPRequest client_request) 
