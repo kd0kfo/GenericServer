@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.FileNotFoundException;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -134,24 +133,6 @@ public class GenericServer implements Runnable {
 		
 		return new HTMLReply(request.get(0),
 					"You asked for (" + request.get(0) + ")");
-	}
-
-	public static void print_header(PrintWriter output, String request,
-			String status) {
-		output.println(status);
-		output.println("Content-Type: text/html; charset=UTF-8");
-		output.println("");
-		output.println("<!DOCTYPE html>");
-		output.println("<html>\n<head>");
-		output.println("<title>Results for " + request + "</title>");
-		output.println("</head>\n<body>");
-
-	}
-
-	public static void print_footer(PrintWriter output) {
-		output.println("</body>");
-		output.println("</html>");
-		output.println("");
 	}
 
 	@Override

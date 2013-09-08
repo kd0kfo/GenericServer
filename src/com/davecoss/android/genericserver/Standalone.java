@@ -2,6 +2,7 @@ package com.davecoss.android.genericserver;
 
 import java.io.Console;
 import java.io.PrintWriter;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class Standalone {
 		// Define args
 		Options options = new Options();
 		options.addOption("c", false, "Use config file.");
-		options.addOption("ssl", false, "Use SSL");
+		options.addOption("ssl", true, "Use SSL");
 		options.addOption("d", true, "Set Debug Level");
 		
 		CommandLineParser parser = new GnuParser();
@@ -41,12 +42,16 @@ public class Standalone {
 		
 		// Parse args
 		boolean use_initial_config = cmd.hasOption("c");
-		boolean use_ssl = cmd.hasOption("ssl");
+		File keystore = null;
 		int debug_level = 1;
 		if(cmd.hasOption("d"))
 		{
 			debug_level = Integer.valueOf(cmd.getOptionValue("d"));
 			System.out.println("Setting debug level to " + debug_level);
+		}
+		if(cmd.hasOption("ssl"))
+		{
+			keystore = new File(cmd.getOptionValue("ssl"));
 		}
 		
 		StandaloneHandler handler = new Standalone().new StandaloneHandler(debug_level);
@@ -65,7 +70,7 @@ public class Standalone {
 		// Start up server
 		if(use_initial_config)
 		{
-			server.load_config(use_ssl);
+			server.load_config(keystore);
 			handler.info("Standalone.main", "Waiting for server start");
 			while(!server.is_running())
 				continue;
@@ -73,10 +78,10 @@ public class Standalone {
 		}
 		else
 		{
-			if(use_ssl)
+			if(keystore != null)
 				handler.debug("Standalone.main", "Starting server with SSL");
 			try {
-				server.start_server(use_ssl);
+				server.start_server(keystore);
 				handler.info("Standalone.main", "Waiting for server start");
 				while(!server.is_running())
 					continue;
@@ -181,7 +186,7 @@ public class Standalone {
 					{
 						if(server.is_running())
 							server.stop_server();
-						server.load_config(use_ssl);
+						server.load_config(keystore);
 						//server.start();
 					} catch(Exception e) {
 						cout.println("Could not load configuration");

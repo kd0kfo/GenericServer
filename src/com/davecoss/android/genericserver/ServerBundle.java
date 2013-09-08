@@ -1,5 +1,6 @@
 package com.davecoss.android.genericserver;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -82,25 +83,31 @@ public class ServerBundle {
 		
 	}
 
-	public void init_server(boolean use_ssl) throws UnknownHostException {
-		if(use_ssl)
-			serverd = new SSLServer(this.handler);
+	public void init_server(File keystore) throws UnknownHostException {
+		if(keystore != null)
+		{
+			SSLServer ssl = new SSLServer(this.handler);
+			ssl.set_keystore(keystore);
+			serverd = ssl;
+		}
 		else
+		{
 			serverd = new GenericServer(this.handler);
+		}
 		server_thread = new Thread(serverd);
 	}
 	
 	public void init_server() throws UnknownHostException {
-		init_server(false);
+		init_server(null);
 	}
 	
-	public void start_server(boolean use_ssl) throws UnknownHostException {
-		init_server(use_ssl);
+	public void start_server(File keystore) throws UnknownHostException {
+		init_server(keystore);
 		start();
 	}
 	
 	public void start_server() throws UnknownHostException {
-		start_server(false);
+		start_server((File)null);
 	}
 
 	public void start_server(InetAddress address, int port)
@@ -144,13 +151,13 @@ public class ServerBundle {
 	}
 	
 	public void load_config() throws FileNotFoundException, IOException {
-		load_config(false);
+		load_config(null);
 	}
 	
-	public void load_config(boolean use_ssl) throws FileNotFoundException, IOException 
+	public void load_config(File keystore) throws FileNotFoundException, IOException 
 	{
 		handler.info("Standalone.load_config", "Creating new server");
-		init_server(use_ssl);
+		init_server(keystore);
 		handler.info("Standalone.load_config", "Loading config");
 		serverd.load_config();
 		handler.info("Standalone.load_config", "Starting thread");

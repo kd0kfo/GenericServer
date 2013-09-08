@@ -22,17 +22,21 @@ public class SSLServer extends GenericServer {
 	public SSLServer(ServerHandler handler) throws UnknownHostException {
 		super(handler);
 		handler.info("SSLServer", "Creating SSLServer object");
-		keyfile = new File("testkeystore");
+		keyfile = new File("keystore");
 	}
 	
 	public SSLServer(InetAddress addr, ServerHandler handler) {
 		super(addr, handler);
-		keyfile = new File("testkeystore");
+		keyfile = new File("keystore");
 	}
 	
 	public SSLServer(InetAddress addr, int port, ServerHandler handler) {
 		super(addr, port, handler);
-		keyfile = new File("testkeystore");
+		keyfile = new File("keystore");
+	}
+	
+	public void set_keystore(File newfile) {
+		keyfile = newfile;
 	}
 	
 	protected ServerSocket get_new_socket() throws IOException, HTTPError {
