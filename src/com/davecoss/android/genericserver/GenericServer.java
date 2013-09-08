@@ -22,10 +22,11 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLException;
 
 public class GenericServer implements Runnable {
 
@@ -273,11 +274,8 @@ public class GenericServer implements Runnable {
 					socket.close();
 					handler.info("GenericServer.run", "Socket closed");
 				}
-			} catch(javax.net.ssl.SSLException ssle) {
-				handler.error("GenericServer.run", "Fatal error with SSL Socket");
-				handler.traceback(ssle);
-				handler.error("GenericServer.run", "Halting thread");
-				has_fatal_error = true;
+			} catch (SSLException ssle) {
+				handler.error("GenericServer.run", "SSLException: " + ssle.getMessage());
 			} catch (SocketException se) {
 				if(!se.getMessage().equals("Socket closed") && !se.getMessage().equals("Socket is closed")) {
 					handler.error("GenericServer.run", "Socket closed");
@@ -550,12 +548,13 @@ public class GenericServer implements Runnable {
 		if(build_info != null)
 		{
 			handler.debug("GenericServer.dump_config", "Got Build Info");
-			Set<String> keys = build_info.stringPropertyNames();
-			Iterator<String> it = keys.iterator();
+			Set<Entry<Object, Object>> keys = build_info.entrySet();
+			Iterator<Entry<Object, Object>> it = keys.iterator();
 			while(it.hasNext())
 			{
-				String key = it.next();
-				String prop_string = "#" + key + ": " + build_info.getProperty(key) + "\n";
+				Entry<Object, Object> pair = it.next();
+				String prop_string = "#" + pair.getKey().toString() + ": " + pair.getValue().toString() + "\n";
+				//String prop_string = "#" + key + ": " + build_info.getProperty(key) + "\n";
 				output.write(prop_string.getBytes());
 			}
 		}

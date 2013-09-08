@@ -30,7 +30,6 @@ public class SSLServer extends GenericServer {
 	}
 		
 	
-	@SuppressWarnings("unused")
 	protected ServerSocket get_new_socket() throws IOException {
 		handler.debug("SSLServer.get_new_socket", "Creating new SSL Socket");
 		SSLServerSocketFactory sslserversocketfactory =
