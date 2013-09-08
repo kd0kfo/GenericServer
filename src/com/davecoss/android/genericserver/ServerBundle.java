@@ -3,6 +3,7 @@ package com.davecoss.android.genericserver;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.lang.InterruptedException;
 
 
@@ -23,7 +24,10 @@ public class ServerBundle {
 
 	public String get_port() {
 		if (serverd == null)
+		{
+			handler.debug("ServerBundle.get_port", "Port requested when server is null");
 			return "";
+		}
 		return serverd.get_port();
 	}
 	
@@ -78,7 +82,7 @@ public class ServerBundle {
 		
 	}
 
-	public void init_server(boolean use_ssl) {
+	public void init_server(boolean use_ssl) throws UnknownHostException {
 		if(use_ssl)
 			serverd = new SSLServer(this.handler);
 		else
@@ -86,16 +90,16 @@ public class ServerBundle {
 		server_thread = new Thread(serverd);
 	}
 	
-	public void init_server() {
+	public void init_server() throws UnknownHostException {
 		init_server(false);
 	}
 	
-	public void start_server(boolean use_ssl) {
+	public void start_server(boolean use_ssl) throws UnknownHostException {
 		init_server(use_ssl);
 		start();
 	}
 	
-	public void start_server() {
+	public void start_server() throws UnknownHostException {
 		start_server(false);
 	}
 

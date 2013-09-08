@@ -17,6 +17,7 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -41,35 +42,17 @@ public class GenericServer implements Runnable {
 	public static final String DEFAULT_HOSTNAME = "localhost";
 	public static final int DEFAULT_PORT = 4242;
 	
-	public GenericServer(ServerHandler handler) {
+	public GenericServer(ServerHandler handler) throws UnknownHostException {
 		this.handler = handler;
-		try {
-			start_server(InetAddress.getByName(DEFAULT_HOSTNAME), this.port);
-		} catch (IOException ioe) {
-			handler.error("GenericServer", "IOException: " + ioe.getMessage());
-			handler.traceback(ioe);
-		}
+		this.addr = InetAddress.getByName("localhost");
 	}
 
 	public GenericServer(InetAddress addr, ServerHandler handler) {
 		this.handler = handler;
-		try {
-			start_server(addr, this.port);
-		} catch (IOException ioe) {
-			handler.error("GenericServer", "IOException: " + ioe.getMessage());
-			handler.traceback(ioe);
-		}
 	}
 	
 	public GenericServer(InetAddress addr, int port, ServerHandler handler) {
 		this.handler = handler;
-		this.port = port;
-		try {
-			start_server(addr, this.port);
-		} catch (IOException ioe) {
-			handler.error("GenericServer", "IOException: " + ioe.getMessage());
-			handler.traceback(ioe);
-		}
 	}
 
 	public HTTPReply process_request(HTTPRequest client_request) 
@@ -284,16 +267,20 @@ public class GenericServer implements Runnable {
 			} catch (IOException ioe) {
 				handler.error("GenericServer.run", "IOException: " + ioe.getMessage());
 				handler.traceback(ioe);
+			} catch(HTTPError httpe) {
+				handler.error("GenericServer.run", "Server Error");
+				handler.traceback(httpe);
+				has_fatal_error = true;
 			}
 		}// while not interrupted
 	}
 
-	protected ServerSocket get_new_socket() throws IOException {
+	protected ServerSocket get_new_socket() throws IOException, HTTPError {
 		handler.debug("GenericServer.get_new_socket", "Creating new Socket");
 		return new ServerSocket(this.port, 0, this.addr);
 	}
 	
-	protected void start_server() throws IOException, javax.net.ssl.SSLException {
+	protected void start_server() throws IOException, javax.net.ssl.SSLException, HTTPError {
 		handler.info("GenericServer.start_server", "Server starting " 
 				+ this.addr.getHostAddress() + ":" + this.port);
 		try {
@@ -310,7 +297,7 @@ public class GenericServer implements Runnable {
 		}
 	}
 
-	protected void start_server(InetAddress addr, int port) throws IOException {
+	protected void start_server(InetAddress addr, int port) throws IOException, HTTPError {
 		this.port = port;
 		this.addr = addr;
 		start_server();
@@ -341,7 +328,10 @@ public class GenericServer implements Runnable {
 
 	public String get_port() {
 		if (this.listener == null)
+		{
+			handler.debug("GenericServer.get_port", "Port requested when listener is null");
 			return "";
+		}
 		return Integer.toString(this.listener.getLocalPort());
 	}
 	
@@ -361,6 +351,9 @@ public class GenericServer implements Runnable {
 	}
 	
 	public boolean is_running() {
+		handler.info("GenericServer.is_running", "listener is null? " + Boolean.toString(this.listener == null));
+		if(this.listener != null)
+			handler.info("GenericServer.is_running", "listener is closed? " + Boolean.toString(this.listener.isClosed()));
 		return (this.listener != null && !this.listener.isClosed());
 	}
 
@@ -543,6 +536,12 @@ public class GenericServer implements Runnable {
 			output.write("No\n".getBytes());
 		else
 			output.write("Yes\n".getBytes());
+		output.write("#Using SSL? ".getBytes());
+		if(this instanceof SSLServer)
+			output.write("Yes\n".getBytes());
+		else
+			output.write("No\n".getBytes());
+		
 		
 		Properties build_info = new BuildInfo().get_build_properties();
 		if(build_info != null)

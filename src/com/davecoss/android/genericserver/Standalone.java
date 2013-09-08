@@ -24,6 +24,7 @@ public class Standalone {
 		Options options = new Options();
 		options.addOption("c", false, "Use config file.");
 		options.addOption("ssl", false, "Use SSL");
+		options.addOption("d", true, "Set Debug Level");
 		
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -41,8 +42,14 @@ public class Standalone {
 		// Parse args
 		boolean use_initial_config = cmd.hasOption("c");
 		boolean use_ssl = cmd.hasOption("ssl");
+		int debug_level = 1;
+		if(cmd.hasOption("d"))
+		{
+			debug_level = Integer.valueOf(cmd.getOptionValue("d"));
+			System.out.println("Setting debug level to " + debug_level);
+		}
 		
-		StandaloneHandler handler = new Standalone().new StandaloneHandler();
+		StandaloneHandler handler = new Standalone().new StandaloneHandler(debug_level);
 		ServerBundle server = new ServerBundle(handler);
 		Console console = System.console();
 		if(console == null) {
@@ -62,10 +69,18 @@ public class Standalone {
 		{
 			if(use_ssl)
 				handler.debug("Standalone.main", "Starting server with SSL");
-			server.start_server(use_ssl);
+			try {
+				server.start_server(use_ssl);
+				handler.info("Standalone.main", "Waiting for server start");
+				while(!server.is_running())
+					continue;
+				cout.println("Server is running on port " + server.get_port());
+			} catch (UnknownHostException uhe) {
+				handler.error("Standalone.main", "Unable to start server. Host Unknown");
+				handler.traceback(uhe);
+			}
 		}
-		cout.println("Server is running on port " + server.get_port());
-
+		
 		String input;
 		while ((input = console.readLine(">")) != null) {
 			if (input.equals("stop")) {
@@ -212,6 +227,13 @@ public class Standalone {
 		public void info(String tag, String msg) {
 			if(verbosity >= 2)
 				System.out.println(tag + ": " + msg);
+		}
+		
+		public char[] get_password() throws HTTPError {
+			Console console = System.console();
+			if(console == null)
+				throw new HTTPError("Could not access Console");
+			return console.readPassword("Enter password: ");
 		}
 	}
 }

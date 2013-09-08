@@ -218,5 +218,9 @@ public class Console extends Activity {
 		public void traceback(Exception e) {
 			Log.getStackTraceString(e);
 		}
+
+		public char[] get_password() throws HTTPError {
+			return "pass123".toCharArray();
+		}
 	}
 }
