@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -58,7 +59,6 @@ public class SSLServer extends GenericServer {
 			throw new IOException("Unspecified key file");
 		
 		handler.info("SSLServer.get_new_socket", "Initializing SSL");
-		System.out.flush();
 		char[] pass = handler.get_password();
 		FileInputStream keyfilestream = new FileInputStream(keyfile);
 		SSLServerSocketFactory sslserversocketfactory = null;
@@ -81,6 +81,8 @@ public class SSLServer extends GenericServer {
 		} finally {
 			if(keyfilestream != null)
 				keyfilestream.close();
+			if(pass != null)
+				Arrays.fill(pass, '*');
 		}
 		if(sslserversocketfactory == null)
 			throw new HTTPError("Error creating SSL Socket Factory.");

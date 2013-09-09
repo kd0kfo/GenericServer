@@ -146,6 +146,7 @@ public class GenericServer implements Runnable {
 			try {
 				if (this.listener == null)
 					start_server();
+				handler.info("GenericServer.run", "Listening on port " + port);
 				Socket socket = listener.accept();
 				handler.info("GenericServer.run", "Opened socket on port " + port);
 				OutputStream out = socket.getOutputStream();
@@ -269,13 +270,15 @@ public class GenericServer implements Runnable {
 		return new ServerSocket(this.port, 0, this.addr);
 	}
 	
-	protected void start_server() throws IOException, javax.net.ssl.SSLException, HTTPError {
+	protected synchronized void start_server() throws IOException, javax.net.ssl.SSLException, HTTPError {
 		handler.info("GenericServer.start_server", "Server starting " 
 				+ this.addr.getHostAddress() + ":" + this.port);
 		try {
 			if(listener != null && !listener.isClosed())
 				listener.close();
+			handler.info("GenericServer.start_server", "Getting new socket");
 			listener = get_new_socket();
+			handler.info("GenericServer.start_server", "Have socket");
 		} catch(javax.net.ssl.SSLException ssle) {
 			handler.error("GenericServer.start_server", "IOException: " + ssle.getMessage());
 			handler.traceback(ssle);
@@ -339,7 +342,7 @@ public class GenericServer implements Runnable {
 		return dir;
 	}
 	
-	public boolean is_running() {
+	public synchronized boolean is_running() {
 		return (this.listener != null && !this.listener.isClosed());
 	}
 

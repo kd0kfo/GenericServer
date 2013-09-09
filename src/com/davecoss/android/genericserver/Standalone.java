@@ -95,7 +95,9 @@ public class Standalone {
 				server.start_server(keystore);
 				handler.error("Standalone.main", "Waiting for server start");
 				while(!server.is_running())
+				{
 					continue;
+				}
 				cout.println("Server is running on port " + server.get_port());
 			} catch (UnknownHostException uhe) {
 				handler.error("Standalone.main", "Unable to start server. Host Unknown");
@@ -228,7 +230,7 @@ public class Standalone {
 		
 		public StandaloneHandler(int verbosity)
 		{
-			verbosity = verbosity;
+			this.verbosity = verbosity;
 		}
 		
 		public void traceback(Exception e)
@@ -238,17 +240,18 @@ public class Standalone {
 		
 		public void error(String tag, String msg)
 		{
-			System.err.println(tag + ": " + msg);
+			System.err.println(get_prefix() + tag + ": " + msg);
 		}
 		
 		public void debug(String tag, String msg) {
 			if(verbosity >= 1)
-				System.out.println(tag + ": " + msg);
+				System.out.println(get_prefix() + tag + ": " + msg);
 		}
 
 		public void info(String tag, String msg) {
+			
 			if(verbosity >= 2)
-				System.out.println(tag + ": " + msg);
+				System.out.println(get_prefix() + tag + ": " + msg);
 		}
 		
 		public char[] get_password() throws HTTPError {
@@ -257,6 +260,10 @@ public class Standalone {
 				throw new HTTPError("Could not access Console");
 			return console.readPassword("Enter password: ");
 			
+		}
+		
+		public String get_prefix() {
+			return "[" + Thread.currentThread().getName() + "]";
 		}
 		
 		
