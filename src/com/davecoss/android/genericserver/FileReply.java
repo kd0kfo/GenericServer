@@ -10,6 +10,10 @@ public class FileReply extends StreamReply {
 			return "Content-type: image/jpeg";
 		else if (filetype == UserFile.FileType.HTML)
 			return "Content-type: text/html";
+		else if (filetype == UserFile.FileType.JAVASCRIPT)
+			return "Content-type: text/javascript";
+		else if (filetype == UserFile.FileType.CSS)
+			return "Content-type: text/css";
 
 		return "Content-type: text/plain";
 	}
