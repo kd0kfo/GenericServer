@@ -12,7 +12,8 @@ public class ServerBundle {
 	private GenericServer serverd;
 	private Thread server_thread;
 	private ServerHandler handler;
-
+	private String ssl_provider = SSLServer.DEFAULT_PROVIDER;
+	
 	public ServerBundle(ServerHandler handler) {
 		serverd = null;
 		server_thread = null;
@@ -20,10 +21,14 @@ public class ServerBundle {
 	}
 
 	public void start() {
+		handler.info("ServerBundle.start", "Starting thread");
 		server_thread.start();
+		handler.info("ServerBundle.start", "Thread started");
+		
 	}
 
 	public String get_port() {
+		handler.info("ServerBundle.get_port", "Getting port");
 		if (serverd == null)
 		{
 			handler.debug("ServerBundle.get_port", "Port requested when server is null");
@@ -89,6 +94,7 @@ public class ServerBundle {
 		{
 			SSLServer ssl = new SSLServer(addr, port, this.handler);
 			ssl.set_keystore(keystore);
+			ssl.set_provider(this.ssl_provider);
 			serverd = ssl;
 		}
 		else
@@ -172,5 +178,13 @@ public class ServerBundle {
 		handler.info("Standalone.load_config", "Starting thread");
 		server_thread = new Thread(serverd);
 		start();
+	}
+	
+	public void set_provider(String new_provider) {
+		this.ssl_provider = new_provider;
+	}
+	
+	public String get_provider() {
+		return this.ssl_provider;
 	}
 }

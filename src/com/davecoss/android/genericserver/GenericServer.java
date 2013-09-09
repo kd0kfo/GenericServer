@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import org.apache.commons.io.input.BoundedInputStream;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -12,12 +13,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.FileNotFoundException;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -582,4 +585,21 @@ public class GenericServer implements Runnable {
 	public InputStream get_favicon() {
 		return this.getClass().getResourceAsStream("favicon.ico");
 	}
+	
+	public static ArrayList<String> get_ip_list() throws SocketException {
+		ArrayList<String> retval = new ArrayList<String>();
+		
+		for(Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics.hasMoreElements();)
+		{
+			NetworkInterface nic = nics.nextElement();
+			for(Enumeration<InetAddress> addrs = nic.getInetAddresses(); addrs.hasMoreElements();)
+			{
+				InetAddress addr = addrs.nextElement();
+				retval.add(addr.getHostAddress());
+			}
+		}
+		
+		return retval;
+	}
+	
 }

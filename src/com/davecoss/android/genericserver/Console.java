@@ -15,7 +15,9 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 
 
 public class Console extends Activity {
@@ -92,16 +94,13 @@ public class Console extends Activity {
 			status = "Status: Failed";
 		}
 		
-		try{
+		try {
+			ArrayList<String> ip_list = GenericServer.get_ip_list();
+			
 			msg += "\nKnown addresses: \n";
-			for(Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces(); nics.hasMoreElements();)
-			{
-				NetworkInterface nic = nics.nextElement();
-				for(Enumeration<InetAddress> addrs = nic.getInetAddresses(); addrs.hasMoreElements();)
-				{
-					InetAddress addr = addrs.nextElement();
-					msg += "\n" + addr.getHostAddress();
-				}
+			Iterator<String> it = ip_list.iterator();
+			while(it.hasNext()) {
+				msg += it.next() + "\n";
 			}
 		}
 		catch(SocketException se)

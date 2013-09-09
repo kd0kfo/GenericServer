@@ -15,6 +15,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 
+import com.davecoss.android.genericserver.SSLServer;
 import com.davecoss.android.genericserver.ServerBundle;
 
 public class Standalone {
@@ -23,9 +24,12 @@ public class Standalone {
 		
 		// Define args
 		Options options = new Options();
-		options.addOption("c", false, "Use config file.");
-		options.addOption("ssl", true, "Use SSL");
-		options.addOption("d", true, "Set Debug Level");
+		int debug_level = 1;
+		options.addOption("c", false, "Use config file. (Default: off)");
+		options.addOption("ssl", true, "Use SSL (Default: No)");
+		options.addOption("d", true, "Set Debug Level (Default: 1 (DEBUG) )");
+		options.addOption("provider", true, "Set KeyStore Provider (Default: "
+				+ SSLServer.DEFAULT_PROVIDER);
 		
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -43,7 +47,7 @@ public class Standalone {
 		// Parse args
 		boolean use_initial_config = cmd.hasOption("c");
 		File keystore = null;
-		int debug_level = 1;
+		String ssl_provider = null;
 		if(cmd.hasOption("d"))
 		{
 			debug_level = Integer.valueOf(cmd.getOptionValue("d"));
@@ -53,9 +57,14 @@ public class Standalone {
 		{
 			keystore = new File(cmd.getOptionValue("ssl"));
 		}
+		if(cmd.hasOption("provider"))
+			ssl_provider = cmd.getOptionValue("provider");
 		
 		StandaloneHandler handler = new Standalone().new StandaloneHandler(debug_level);
 		ServerBundle server = new ServerBundle(handler);
+		if(ssl_provider != null)
+			server.set_provider(ssl_provider);
+		
 		Console console = System.console();
 		if(console == null) {
 			server.start_server();
@@ -73,7 +82,9 @@ public class Standalone {
 			server.load_config(keystore);
 			handler.info("Standalone.main", "Waiting for server start");
 			while(!server.is_running())
+			{
 				continue;
+			}
 			cout.println("Server is running on port " + server.get_port());
 		}
 		else
@@ -82,7 +93,7 @@ public class Standalone {
 				handler.debug("Standalone.main", "Starting server with SSL");
 			try {
 				server.start_server(keystore);
-				handler.info("Standalone.main", "Waiting for server start");
+				handler.error("Standalone.main", "Waiting for server start");
 				while(!server.is_running())
 					continue;
 				cout.println("Server is running on port " + server.get_port());
@@ -245,6 +256,9 @@ public class Standalone {
 			if(console == null)
 				throw new HTTPError("Could not access Console");
 			return console.readPassword("Enter password: ");
+			
 		}
+		
+		
 	}
 }

@@ -16,7 +16,10 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class SSLServer extends GenericServer {
 
-	protected File keyfile = null; 
+	public static String DEFAULT_PROVIDER = "BKS";
+	
+	protected File keyfile = null;
+	protected String provider = DEFAULT_PROVIDER;
 	
 	
 	public SSLServer(ServerHandler handler) throws UnknownHostException {
@@ -39,6 +42,14 @@ public class SSLServer extends GenericServer {
 		keyfile = newfile;
 	}
 	
+	public void set_provider(String new_provider) {
+		this.provider = new_provider;
+	}
+	
+	public String get_provider() {
+		return this.provider;
+	}
+	
 	protected ServerSocket get_new_socket() throws IOException, HTTPError {
 		handler.debug("SSLServer.get_new_socket", "Creating new SSL Socket");
 		
@@ -46,11 +57,13 @@ public class SSLServer extends GenericServer {
 		if(keyfile == null)
 			throw new IOException("Unspecified key file");
 		
+		handler.info("SSLServer.get_new_socket", "Initializing SSL");
+		System.out.flush();
 		char[] pass = handler.get_password();
 		FileInputStream keyfilestream = new FileInputStream(keyfile);
 		SSLServerSocketFactory sslserversocketfactory = null;
 		try {
-			KeyStore keyStore = KeyStore.getInstance("BKS");
+			KeyStore keyStore = KeyStore.getInstance(this.provider);
 			keyStore.load(keyfilestream, pass);
 			KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
 					KeyManagerFactory.getDefaultAlgorithm());
