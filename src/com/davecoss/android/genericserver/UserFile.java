@@ -12,7 +12,7 @@ import java.util.Locale;
 // TODO: Consider using polymorphism instead.
 public class UserFile {
 	public enum FileType {
-		HTML, TEXT, JSON, JPEG
+		HTML, TEXT, JSON, JPEG, JAVASCRIPT, CSS
 	}
 	
 	public static final long MAX_OUTFILE_SIZE = 33554432L;
@@ -43,12 +43,16 @@ public class UserFile {
 		String extension = filename.substring(filename.lastIndexOf(".") + 1);
 		if (extension.length() > 0) {
 			extension = extension.toLowerCase(Locale.US);
-			if (extension.equals("jpg") || extension.equals("jpeg"))
-				return UserFile.FileType.JPEG;
-			else if (extension.equals("json"))
-				return UserFile.FileType.JSON;
+			if (extension.equals("css"))
+				return UserFile.FileType.CSS;
 			else if (extension.equals("html") || extension.equals("htm"))
 				return UserFile.FileType.HTML;
+			else if (extension.equals("jpg") || extension.equals("jpeg"))
+				return UserFile.FileType.JPEG;
+			else if (extension.equals("js"))
+				return UserFile.FileType.JAVASCRIPT;
+			else if (extension.equals("json"))
+				return UserFile.FileType.JSON;
 		}
 		return UserFile.FileType.TEXT;
 	}
