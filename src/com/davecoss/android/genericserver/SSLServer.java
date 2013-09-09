@@ -50,7 +50,7 @@ public class SSLServer extends GenericServer {
 		FileInputStream keyfilestream = new FileInputStream(keyfile);
 		SSLServerSocketFactory sslserversocketfactory = null;
 		try {
-			KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+			KeyStore keyStore = KeyStore.getInstance("BKS");
 			keyStore.load(keyfilestream, pass);
 			KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
 					KeyManagerFactory.getDefaultAlgorithm());
