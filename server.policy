@@ -9,7 +9,7 @@ grant codeBase "file:${{java.ext.dirs}}/*" {
 
 grant { 
 	// Socket listening needs to be allowed.
-	permission java.net.SocketPermission "localhost:1024-", "listen,accept,resolve";
+	permission java.net.SocketPermission "*:1024-", "listen,accept,resolve";
 	permission java.net.SocketPermission "awesome", "resolve";
 
 	// "standard" properies that can be read by anyone
@@ -23,5 +23,9 @@ grant {
 
 	permission java.io.FilePermission "server.conf", "read";
 	permission java.io.FilePermission "server.conf", "write";
+
+	permission java.io.FilePermission "test/-","read";
+	permission java.io.FilePermission "test/output.dat","write";
+	permission java.util.PropertyPermission "user.dir","read";
 };
 
