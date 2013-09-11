@@ -2,6 +2,7 @@ package com.davecoss.android.genericserver;
 
 import java.io.Console;
 import java.io.PrintWriter;
+import java.io.PrintStream;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -29,6 +30,7 @@ public class Standalone {
 		options.addOption("c", false, "Use config file. (Default: off)");
 		options.addOption("d", true, "Set Debug Level (Default: 1 (DEBUG) )");
 		options.addOption("daemon", false, "Run without console. (Default: " + Boolean.valueOf(should_daemon) + ")");
+		options.addOption("log", true, "Send log output to a file. (Default: Standard output/error)");
 		options.addOption("provider", true, "Set KeyStore Provider (Default: "
 				+ SSLServer.DEFAULT_PROVIDER);
 		options.addOption("ssl", true, "Use SSL (Default: No)");
@@ -49,22 +51,28 @@ public class Standalone {
 		// Parse args
 		boolean use_initial_config = cmd.hasOption("c");
 		File keystore = null;
+		PrintStream logstream = null;
 		String ssl_provider = null;
 		if(cmd.hasOption("d"))
 		{
 			debug_level = Integer.valueOf(cmd.getOptionValue("d"));
 			System.out.println("Setting debug level to " + debug_level);
 		}
+		if(cmd.hasOption("daemon"))
+			should_daemon = true;
+		if(cmd.hasOption("log"))
+			logstream = new PrintStream(cmd.getOptionValue("log"));	
+		if(cmd.hasOption("provider"))
+			ssl_provider = cmd.getOptionValue("provider");
 		if(cmd.hasOption("ssl"))
 		{
 			keystore = new File(cmd.getOptionValue("ssl"));
 		}
-		if(cmd.hasOption("provider"))
-			ssl_provider = cmd.getOptionValue("provider");
-		if(cmd.hasOption("daemon"))
-			should_daemon = true;
-		
+
+	
 		StandaloneHandler handler = new Standalone().new StandaloneHandler(debug_level);
+		if(logstream != null)
+			handler.set_logstream(logstream);
 		ServerBundle server = new ServerBundle(handler);
 		if(ssl_provider != null)
 			server.set_provider(ssl_provider);
@@ -226,7 +234,8 @@ public class Standalone {
 	public class StandaloneHandler implements ServerHandler
 	{
 		public int verbosity = 1;
-		
+		private PrintStream logstream = System.out;	
+
 		public StandaloneHandler()
 		{
 			
@@ -239,23 +248,23 @@ public class Standalone {
 		
 		public void traceback(Exception e)
 		{
-			e.printStackTrace();
+			e.printStackTrace(logstream);
 		}
 		
 		public void error(String tag, String msg)
 		{
-			System.err.println(get_prefix() + tag + ": " + msg);
+			logstream.println(get_prefix() + tag + ": " + msg);
 		}
 		
 		public void debug(String tag, String msg) {
 			if(verbosity >= 1)
-				System.out.println(get_prefix() + tag + ": " + msg);
+				logstream.println(get_prefix() + tag + ": " + msg);
 		}
 
 		public void info(String tag, String msg) {
 			
 			if(verbosity >= 2)
-				System.out.println(get_prefix() + tag + ": " + msg);
+				logstream.println(get_prefix() + tag + ": " + msg);
 		}
 		
 		public char[] get_password() throws HTTPError {
@@ -270,6 +279,9 @@ public class Standalone {
 			return "[" + Thread.currentThread().getName() + "]";
 		}
 		
+		public void set_logstream(PrintStream newstream) {
+			logstream = newstream;
+		}
 		
 	}
 }
