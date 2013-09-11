@@ -25,11 +25,13 @@ public class Standalone {
 		// Define args
 		Options options = new Options();
 		int debug_level = 1;
+		boolean should_daemon = false;
 		options.addOption("c", false, "Use config file. (Default: off)");
-		options.addOption("ssl", true, "Use SSL (Default: No)");
 		options.addOption("d", true, "Set Debug Level (Default: 1 (DEBUG) )");
+		options.addOption("daemon", false, "Run without console. (Default: " + Boolean.valueOf(should_daemon) + ")");
 		options.addOption("provider", true, "Set KeyStore Provider (Default: "
 				+ SSLServer.DEFAULT_PROVIDER);
+		options.addOption("ssl", true, "Use SSL (Default: No)");
 		
 		CommandLineParser parser = new GnuParser();
 		CommandLine cmd = null;
@@ -59,6 +61,8 @@ public class Standalone {
 		}
 		if(cmd.hasOption("provider"))
 			ssl_provider = cmd.getOptionValue("provider");
+		if(cmd.hasOption("daemon"))
+			should_daemon = true;
 		
 		StandaloneHandler handler = new Standalone().new StandaloneHandler(debug_level);
 		ServerBundle server = new ServerBundle(handler);
@@ -66,15 +70,6 @@ public class Standalone {
 			server.set_provider(ssl_provider);
 		
 		Console console = System.console();
-		if(console == null) {
-			server.start_server();
-			System.out.println("Could not get console. Running simple server. Press Ctrl-C to terminate.");
-			while(server.is_running())
-				continue;
-			System.exit(0);
-		}
-		
-		PrintWriter cout = console.writer();
 
 		// Start up server
 		if(use_initial_config)
@@ -85,7 +80,6 @@ public class Standalone {
 			{
 				continue;
 			}
-			cout.println("Server is running on port " + server.get_port());
 		}
 		else
 		{
@@ -98,13 +92,23 @@ public class Standalone {
 				{
 					continue;
 				}
-				cout.println("Server is running on port " + server.get_port());
 			} catch (UnknownHostException uhe) {
 				handler.error("Standalone.main", "Unable to start server. Host Unknown");
 				handler.traceback(uhe);
 			}
 		}
-		
+
+		if(should_daemon || console == null) {
+			System.out.println("Running simple server. Press Ctrl-C to terminate.");
+			// TODO: Fill in with blocking call that will wait until the ServerBundle.server_thread child thread ends.
+			server.blocking_wait();
+			System.exit(0);
+		}
+
+
+		PrintWriter cout = console.writer();
+		cout.println("Server is running on port " + server.get_port());
+
 		String input;
 		while ((input = console.readLine(">")) != null) {
 			if (input.equals("stop")) {

@@ -187,4 +187,14 @@ public class ServerBundle {
 	public String get_provider() {
 		return this.ssl_provider;
 	}
+
+	public void blocking_wait() {
+		if(this.server_thread == null)
+			return;
+		try {
+			this.server_thread.join();
+		} catch(java.lang.InterruptedException ie) {
+			return;
+		}
+	}
 }
