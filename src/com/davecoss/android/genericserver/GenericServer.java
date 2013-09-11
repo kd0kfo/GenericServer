@@ -230,9 +230,10 @@ public class GenericServer implements Runnable {
 							}
 						}
 						reply = process_request(request);
-					}
-					catch(HTTPError httperr)
-					{
+					} catch (EmptyRequest er) {
+						handler.debug("GenericServer.run", "Empty Response");
+						reply = new HTMLReply("Empty Response", "Empty Response", HTTPReply.STATUS_ERROR);
+					} catch(HTTPError httperr) {
 						handler.error("GenericServer.run", "HTTP ERROR: " + httperr);
 						handler.traceback(httperr);
 						reply = new HTMLReply("ERROR", "Server Error", HTTPReply.STATUS_ERROR);
