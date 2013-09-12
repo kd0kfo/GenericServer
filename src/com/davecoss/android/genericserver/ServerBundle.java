@@ -28,7 +28,6 @@ public class ServerBundle {
 	}
 
 	public String get_port() {
-		handler.info("ServerBundle.get_port", "Getting port");
 		if (serverd == null)
 		{
 			handler.debug("ServerBundle.get_port", "Port requested when server is null");
