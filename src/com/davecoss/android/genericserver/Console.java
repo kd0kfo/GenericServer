@@ -54,6 +54,9 @@ public class Console extends Activity {
 					Bundle b = new Bundle();
 					Message msg = new Message();
 					String status = "";
+					boolean userdir = false;
+					boolean canwrite = false;
+					
 					if(server == null)
 					{
 						status = "Server not initialized";
@@ -61,8 +64,15 @@ public class Console extends Activity {
 					else
 					{
 						if(server.is_running())
+						{
+							
 							status = "Running on " + server.get_address().getHostAddress()
 									+ ":" + server.get_port();
+							String strUserdir = server.getdir();
+							if(strUserdir != null)
+								userdir = strUserdir.length() > 0;
+							canwrite = server.get_write_permission();
+						}
 						else
 							status = "Stopped";
 					}
@@ -72,6 +82,8 @@ public class Console extends Activity {
 						// Nothing to do. Interrupting this is ok.
 					}
 					b.putString("status", status);
+					b.putBoolean("userdir", userdir);
+					b.putBoolean("canwrite", canwrite);
 					msg.setData(b);
 					status_updater.sendMessage(msg);
 				} // while not interrupted
@@ -153,7 +165,7 @@ public class Console extends Activity {
 			msg = "Could not get interface information.";
 		}
 		txt_rx.setText(msg);
-		status_message(status);
+		status_message(status, false, false);
 	}
 	
 	public void stop_server(View view)
@@ -173,7 +185,7 @@ public class Console extends Activity {
 	    
 			Log.e("Console.stop_server", "Interrupted: " + e.getMessage());
 	    }
-	    status_message("Status: Stopped");
+	    status_message("Status: Stopped", false, false);
 	}
 	
 	public void setWritePerm(View view)
@@ -220,7 +232,7 @@ public class Console extends Activity {
     		{
     			if(!dir.mkdirs())
     			{
-    				status_message("Could not make directory.");
+    				status_message("Could not make directory.", false, false);
     				return;
     			}
     		}
@@ -229,10 +241,16 @@ public class Console extends Activity {
     	}
 	}
 	
-	private void status_message(String msg)
+	private void status_message(String msg, boolean canwrite, boolean userdir)
 	{
 		TextView status = (TextView)findViewById(R.id.txt_message);
 		status.setText(msg);
+		
+		ToggleButton tv = (ToggleButton) findViewById(R.id.btn_setdir);
+		tv.setChecked(userdir);
+		
+		tv = (ToggleButton)findViewById(R.id.btn_write_perm);
+		tv.setChecked(canwrite);
 	}
 	
 	private File get_keystore() {
@@ -267,11 +285,11 @@ public class Console extends Activity {
 		} catch(UnknownHostException uhe) {
 			handler.error("Console.setaddr", "Unknown Host Error");
 			handler.traceback(uhe);
-			status_message("Unknown host: " + addr);
+			status_message("Unknown host: " + addr, false, false);
 		} catch(Exception e) {
 			handler.error("Console.setaddr", "Error starting server");
 			handler.traceback(e);
-			status_message("Error starting server: " + e.getMessage());
+			status_message("Error starting server: " + e.getMessage(), false, false);
 		}
 	}
 	
@@ -322,7 +340,9 @@ public class Console extends Activity {
 				Console console = parent.get();
 				Bundle b = msg.getData();
 				String status = b.getString("status");
-				console.status_message("Status: " + status);
+				boolean canwrite = b.getBoolean("canwrite");
+				boolean userdir = b.getBoolean("userdir");
+				console.status_message("Status: " + status, canwrite, userdir);
 			}
 	}
 }
