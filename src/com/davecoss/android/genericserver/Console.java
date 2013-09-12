@@ -2,6 +2,8 @@ package com.davecoss.android.genericserver;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.app.Activity;
 import android.util.Log;
 import android.view.Menu;
@@ -11,6 +13,7 @@ import android.widget.ToggleButton;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -21,8 +24,9 @@ import java.util.Iterator;
 public class Console extends Activity {
     private ServerBundle server = null;
     private AndroidHandler handler;
-	TextView txt_rx;
-
+	TextView txt_rx = null;
+	private AndroidMonitor status_updater = null;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -35,7 +39,47 @@ public class Console extends Activity {
 		if(!this.server.is_running())
 			this.start_server("localhost");
 		
-		
+		status_updater = new AndroidMonitor(this);
+	}
+	
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Thread monitor = new  Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				while(!Thread.currentThread().isInterrupted())
+				{
+					Bundle b = new Bundle();
+					Message msg = new Message();
+					String status = "";
+					if(server == null)
+					{
+						status = "Server not initialized";
+					}
+					else
+					{
+						if(server.is_running())
+							status = "Running on " + server.get_address().getHostAddress()
+									+ ":" + server.get_port();
+						else
+							status = "Stopped";
+					}
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// Nothing to do. Interrupting this is ok.
+					}
+					b.putString("status", status);
+					msg.setData(b);
+					status_updater.sendMessage(msg);
+				} // while not interrupted
+			}
+			
+		});
+		if(monitor != null)
+			monitor.start();
 	}
 	
 	@Override
@@ -50,11 +94,12 @@ public class Console extends Activity {
 			}
 			catch(Exception e)
 			{
-				Log.e("Console.onDestroy", "Error stopping server: " + e.getMessage());
+				handler.error("Console.onDestroy", "Error stopping server: " + e.getMessage());
 			}
 		}
-
-		this.server = null;		
+		this.server = null;
+		
+		this.status_updater = null;
 	}
 	
 
@@ -263,5 +308,21 @@ public class Console extends Activity {
 			
 			return box1.getText().toString().toCharArray();
 		}
+	}
+	
+	static class AndroidMonitor extends Handler {
+
+		private final WeakReference<Console> parent;
+		
+		public AndroidMonitor(Console parent) { 
+			this.parent = new WeakReference<Console>(parent);
+		}
+		
+		public void handleMessage(Message msg) {
+				Console console = parent.get();
+				Bundle b = msg.getData();
+				String status = b.getString("status");
+				console.status_message("Status: " + status);
+			}
 	}
 }
