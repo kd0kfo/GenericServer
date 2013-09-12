@@ -12,11 +12,9 @@ import android.widget.ToggleButton;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 
 
@@ -30,7 +28,8 @@ public class Console extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_console);
 		
-		handler = new AndroidHandler();
+		TextView passwd = (TextView)findViewById(R.id.txt_password);
+		handler = new AndroidHandler(passwd);
 		if(this.server == null)
 			server = new ServerBundle(handler);
 		if(!this.server.is_running())
@@ -224,11 +223,21 @@ public class Console extends Activity {
 			handler.error("Console.setaddr", "Unknown Host Error");
 			handler.traceback(uhe);
 			status_message("Unknown host: " + addr);
+		} catch(Exception e) {
+			handler.error("Console.setaddr", "Error starting server");
+			handler.traceback(e);
+			status_message("Error starting server: " + e.getMessage());
 		}
 	}
 	
 	public class AndroidHandler implements ServerHandler
 	{
+		private TextView box1 = null;
+		
+		public AndroidHandler(TextView box) {
+			box1 = box;
+		}
+		
 		public void error(String tag, String msg)
 		{
 			Log.e(tag, msg);
@@ -249,8 +258,10 @@ public class Console extends Activity {
 		}
 
 		public char[] get_password() throws HTTPError {
-			// TODO: Implement dialog
-			return "pass123".toCharArray();
+			if(box1 == null)
+				throw new HTTPError("Cannot open keystore, password box not defined.");
+			
+			return box1.getText().toString().toCharArray();
 		}
 	}
 }
