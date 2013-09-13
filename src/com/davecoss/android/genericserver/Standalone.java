@@ -108,7 +108,6 @@ public class Standalone {
 
 		if(should_daemon || console == null) {
 			System.out.println("Running simple server. Press Ctrl-C to terminate.");
-			// TODO: Fill in with blocking call that will wait until the ServerBundle.server_thread child thread ends.
 			server.blocking_wait();
 			System.exit(0);
 		}
