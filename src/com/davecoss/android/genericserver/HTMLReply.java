@@ -12,11 +12,12 @@ public class HTMLReply extends HTTPReply {
 		super(title, content, status);
 	}
 	
+	@Override
 	public String get_content_type() {
 		return "Content-Type: text/html; charset=UTF-8";
 	}
 	
-	public void dump_header(PrintWriter output) {
+	public void dump_html_header(PrintWriter output) {
 		output.println("<!DOCTYPE html>");
 		output.println("<html>\n<head>");
 		output.println("<title>" + this.title + "</title>");
@@ -30,14 +31,12 @@ public class HTMLReply extends HTTPReply {
 		output.println("");
 	}
 	
-	public void dump(PrintWriter output)
+	@Override
+	public void dump_body(PrintWriter output)
 	{
-		output.println(this.status);
 		
-		output.println(get_content_type());
-		output.println("");
 
-		dump_header(output);
+		dump_html_header(output);
 		
 		output.println(this.content);
 		

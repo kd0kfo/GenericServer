@@ -167,7 +167,9 @@ public class GenericServer implements Runnable {
 						{
 							handler.debug("GenericServer.run", "Invalid Request String Length: " + input_text);
 						}
-						else if (request_tokens[0].equals("GET") || request_tokens[0].equals("POST"))
+						else if (request_tokens[0].equals("HEAD") || 
+								request_tokens[0].equals("GET") || 
+								request_tokens[0].equals("POST"))
 						{
 							handler.debug("GenericServer.run", input_text);
 							request = new HTTPRequest(request_tokens[0], request_tokens[1]);
@@ -242,7 +244,15 @@ public class GenericServer implements Runnable {
 					if(reply != null && !socket.isClosed())
 					{
 						handler.debug("GenericServer.run", "Sending reply");
-						reply.write(out);
+						if(request.get_type() == HTTPRequest.RequestType.HEAD)
+						{
+							handler.debug("GenericServer.run", "Sending header");
+							reply.dump_head(out);
+						}
+						else
+						{
+							reply.write(out);
+						}
 					}
 					handler.info("GenericServer.run", "Closing socket");
 					socket.close();

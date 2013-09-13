@@ -12,7 +12,7 @@ public class HTTPRequest {
 	public static String DEFAULT_ENCODING = "UTF-8";
 	
 	enum RequestType {
-		GET, POST
+		GET, POST, HEAD
 	}
 	
 	private RequestType type;

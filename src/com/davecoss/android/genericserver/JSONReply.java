@@ -16,15 +16,20 @@ public class JSONReply extends HTTPReply {
 		return "Content-type: application/json";
 	}
 	
-	public void dump(PrintWriter output)
+	@Override
+	public void dump_head(PrintWriter output)
 	{
 		output.println(this.status);
 		
 		output.println(get_content_type());
 		output.println("");
+		output.flush();
+	}
+	
 
+	@Override
+	public void dump_body(PrintWriter output) {
 		output.println(this.content);
-		
 		output.println("");
 		output.flush();
 	}

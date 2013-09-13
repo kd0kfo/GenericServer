@@ -1,5 +1,6 @@
 package com.davecoss.android.genericserver;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.OutputStream;
 
@@ -76,18 +77,34 @@ public class HTTPReply {
 		return "Content-type: text/plain";
 	}
 	
-	public void dump(PrintWriter output)
-	{
+	public void dump_head(PrintWriter output) {
 		output.println(this.status);
-		
 		output.println(get_content_type());
 		output.println("");
+		output.flush();
+	}
+	
+	public void dump_head(OutputStream outstream) throws IOException {
+		dump_head(new PrintWriter(outstream));
+	}
+	
+	public void dump_body(PrintWriter output) {
 		output.println(this.content);
 		output.println("");
 		output.flush();
 	}
+	
+	public void dump_body(OutputStream outstream) {
+		dump_body(new PrintWriter(outstream));
+	}
+	
+	public void dump(PrintWriter output)
+	{
+		dump_head(output);
+		dump_body(output);
+	}
 
-	public void write(OutputStream output) throws java.io.IOException {
+	public void write(OutputStream output) throws IOException {
 		dump(new PrintWriter(output));
 	}
 	
