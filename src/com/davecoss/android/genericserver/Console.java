@@ -26,6 +26,8 @@ public class Console extends Activity {
     private AndroidHandler handler;
 	TextView txt_rx = null;
 	private AndroidMonitor status_updater = null;
+	private Thread monitor = null;
+	private boolean should_stop_monitor = true;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +47,12 @@ public class Console extends Activity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		Thread monitor = new  Thread(new Runnable() {
+		should_stop_monitor = false;
+		monitor = new  Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				while(!Thread.currentThread().isInterrupted())
+				while(!Thread.currentThread().isInterrupted() && !should_stop_monitor)
 				{
 					Bundle b = new Bundle();
 					Message msg = new Message();
@@ -81,6 +84,8 @@ public class Console extends Activity {
 					} catch (InterruptedException e) {
 						// Nothing to do. Interrupting this is ok.
 					}
+					if(status_updater == null)
+						continue;
 					b.putString("status", status);
 					b.putBoolean("userdir", userdir);
 					b.putBoolean("canwrite", canwrite);
@@ -111,6 +116,16 @@ public class Console extends Activity {
 		}
 		this.server = null;
 		
+		should_stop_monitor = true;
+		if(this.monitor != null)
+		{
+			try{
+				this.monitor.join();
+			} catch(InterruptedException ie) {
+				//Nothing to do.
+			}
+			this.monitor = null;
+		}
 		this.status_updater = null;
 	}
 	
@@ -301,23 +316,27 @@ public class Console extends Activity {
 			box1 = box;
 		}
 		
+		public String get_prefix() {
+			return "[" + Thread.currentThread().getName() + "]";
+		}
+		
 		public void error(String tag, String msg)
 		{
-			Log.e(tag, msg);
+			Log.e(get_prefix() + tag, msg);
 		}
 		
 		public void debug(String tag, String msg)
 		{
-			Log.d(tag, msg);
+			Log.d(get_prefix() + tag, msg);
 		}
 		
 		public void info(String tag, String msg)
 		{
-			Log.i(tag, msg);
+			Log.i(get_prefix() + tag, msg);
 		}
 
 		public void traceback(Exception e) {
-			this.error("STACKTRACE", Log.getStackTraceString(e));
+			this.error(get_prefix() + " STACKTRACE", Log.getStackTraceString(e));
 		}
 
 		public char[] get_password() throws HTTPError {
