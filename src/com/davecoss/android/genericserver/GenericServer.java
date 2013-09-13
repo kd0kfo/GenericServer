@@ -244,7 +244,7 @@ public class GenericServer implements Runnable {
 					if(reply != null && !socket.isClosed())
 					{
 						handler.debug("GenericServer.run", "Sending reply");
-						if(request.get_type() == HTTPRequest.RequestType.HEAD)
+						if(request != null && request.get_type() == HTTPRequest.RequestType.HEAD)
 						{
 							handler.debug("GenericServer.run", "Sending header");
 							reply.dump_head(out);
