@@ -116,6 +116,8 @@ public class GenericServer implements Runnable {
 			}
 		} else if (request.get(0).equals("echo")) {
 			return process_echo(client_request, request);
+		} else if (request.get(0).equals("teapot")) {
+		    return new HTTPReply("I'm a teapot", "short and stout", "HTTP/1.1 418 I'm a teapot");
 		} else if (request.get(0).equals("file")) {
 			try {
 				return process_file(client_request, request);
