@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import org.apache.commons.io.input.BoundedInputStream;
 
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,12 +20,16 @@ import java.net.SocketException;
 import java.net.Socket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
@@ -77,7 +82,7 @@ public class GenericServer implements Runnable {
 			return new HTMLReply("Welcome", "Welcome to the server.");
 		}
 		request.remove(0);
-		if (request.get(0).equals("date")) {
+		if (request.get(0).equals("date") || request.get(0).equals("unixtime")) {
 			return send_date(request);
 		} else if (request.get(0).equals("user") && request.size() > 1) {
 			try {
@@ -361,12 +366,37 @@ public class GenericServer implements Runnable {
 
 	protected HTTPReply send_date(ArrayList<String> request){
 		String date_string = "";
-		if (request.size() > 1 && request.get(1).equals("unixtime")) {
-			long unixtime = System.currentTimeMillis() / 1000L;
+		String arg = null;
+		long unixtime = System.currentTimeMillis() / 1000L;
+		
+		if(request.size() > 1) {
+			arg = request.get(1);
+		}
+		
+		if (request.get(0).equals("unixtime")) {
+			// Return a unix timestamp
+			if (arg != null) {
+				DateFormat fmt = new SimpleDateFormat("yyyyMMddHHmm", Locale.getDefault());  
+				try {
+					unixtime = fmt.parse(arg).getTime();
+				} catch (ParseException pe) {
+					handler.debug("GenericServer.send_date", "Error parsing date: " + arg);
+					return new HTTPReply("Invalid Date"," Invalid date: " + arg, HTTPReply.STATUS_ERROR);
+				}
+			}
 			date_string = Long.toString(unixtime);
 		} else {
-			date_string = (new Date()).toString();
+			// Return a date
+			if (arg != null) {
+				try {
+					unixtime = Long.valueOf(arg);
+				} catch(NumberFormatException nfe) {
+					return new HTTPReply("Invalid Unixtime", "Invalid unixtime: " + arg, HTTPReply.STATUS_ERROR);
+				}
+			}
+			date_string = (new Date(unixtime)).toString();
 		}
+		
 		if (request.get(request.size() - 1).equals("json")) {
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("date", date_string);
