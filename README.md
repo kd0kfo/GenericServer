@@ -19,3 +19,11 @@ License
 -------
 
 With the exception of third-party libraries in the libs/ directory (see Requires), everything may be used under the terms of the GNU General Public License version 3. For details see the LICENSE file or go to http://www.gnu.org/licenses/gpl.html
+
+
+SSL
+---
+
+GenericServer is able to serve content using SSL. The android app looks for a keystore, called server.keystore, in the /mnt/sdcard directory. If it exists and a correct password is entered in the password text box, SSL is used. If the file does not exist or if the password text box is empty, SSL is not used.
+
+SSL has been tested on Android 2.3 using the Bouncy Castle 1.46 provider (BKS keystore type). This provider jar may be found at http://repo2.maven.org/maven2/org/bouncycastle/bcprov-ext-jdk15on/1.46/bcprov-ext-jdk15on-1.46.jar and is available under their own license found at http://www.bouncycastle.org/licence.html.
