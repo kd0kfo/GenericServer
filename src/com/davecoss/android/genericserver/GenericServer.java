@@ -378,7 +378,7 @@ public class GenericServer implements Runnable {
 			if (arg != null) {
 				DateFormat fmt = new SimpleDateFormat("yyyyMMddHHmm", Locale.getDefault());  
 				try {
-					unixtime = fmt.parse(arg).getTime();
+					unixtime = fmt.parse(arg).getTime()/1000L;
 				} catch (ParseException pe) {
 					handler.debug("GenericServer.send_date", "Error parsing date: " + arg);
 					return new HTTPReply("Invalid Date"," Invalid date: " + arg, HTTPReply.STATUS_ERROR);
@@ -394,7 +394,7 @@ public class GenericServer implements Runnable {
 					return new HTTPReply("Invalid Unixtime", "Invalid unixtime: " + arg, HTTPReply.STATUS_ERROR);
 				}
 			}
-			date_string = (new Date(unixtime)).toString();
+			date_string = (new Date(unixtime*1000L)).toString();
 		}
 		
 		if (request.get(request.size() - 1).equals("json")) {
