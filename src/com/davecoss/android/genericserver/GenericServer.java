@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import org.apache.commons.io.input.BoundedInputStream;
 
 
+import java.lang.InstantiationException;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.FileNotFoundException;
+import java.net.URL;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -139,6 +141,8 @@ public class GenericServer implements Runnable {
 				handler.error("GenericServer.process_request", err);
 				return new HTMLReply("Error processing file", err, HTTPReply.STATUS_ERROR);
 			}
+		} else if (request.get(0).equals("plugin")) {
+		    return process_plugin(client_request, request);
 		}
 		
 		return new HTMLReply(request.get(0),
@@ -647,5 +651,29 @@ public class GenericServer implements Runnable {
 		
 		return retval;
 	}
+
+	public HTTPReply process_plugin(HTTPRequest client_request, ArrayList<String> request) {
+		String plugin_name = null;
+		String response = "Requested plugin";
+		if(request.size() < 2) {
+			plugin_name = "";
+			response = "Missing Plugin Name";
+		} else {
+			plugin_name = request.get(1);
+			Plugin plugin = new Plugin(Plugin.getDefaultURLs());
+			try {
+				plugin.addURL(new URL("file:plugins.jar"));
+				Class test = plugin.loadClass(plugin_name);
+				Object obj = test.newInstance();
+				return ((Module)obj).process_request(client_request);
+			} catch(Exception e) {
+				handler.error("GenericServer.process_plugin", "Error loading plugin " + plugin_name);
+				handler.traceback(e);
+				return new HTMLReply("Invalid Plugin", "Error creating plugin class " + plugin_name, HTTPReply.STATUS_ERROR);
+			}
+		}
+		return new HTMLReply("Plugin request", response);
+
+	}	
 	
 }
