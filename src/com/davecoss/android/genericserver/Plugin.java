@@ -22,6 +22,9 @@ public class Plugin extends URLClassLoader {
 	}
 
 	public static URL[] getDefaultURLs() {
-		return ((URLClassLoader)ClassLoader.getSystemClassLoader()).getURLs();	
+		ClassLoader cl = ClassLoader.getSystemClassLoader();
+		URL[] empty = {};
+		URLClassLoader urlcl = new URLClassLoader(empty, cl);
+		return urlcl.getURLs();
 	}
 }
