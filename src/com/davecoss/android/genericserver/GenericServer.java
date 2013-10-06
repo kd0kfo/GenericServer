@@ -7,7 +7,6 @@ import java.io.ByteArrayOutputStream;
 import org.apache.commons.io.input.BoundedInputStream;
 
 
-import java.lang.InstantiationException;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -663,6 +662,7 @@ public class GenericServer implements Runnable {
 			Plugin plugin = new Plugin(Plugin.getDefaultURLs());
 			try {
 				plugin.addURL(new URL("file:plugins.jar"));
+				@SuppressWarnings("rawtypes")
 				Class test = plugin.loadClass(plugin_name);
 				Object obj = test.newInstance();
 				return ((Module)obj).process_request(client_request);
