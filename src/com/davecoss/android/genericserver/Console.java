@@ -37,7 +37,7 @@ public class Console extends Activity {
 		TextView passwd = (TextView)findViewById(R.id.txt_password);
 		handler = new AndroidHandler(passwd);
 		if(this.server == null)
-			server = new ServerBundle(handler);
+			server = new_server_instance(handler);
 		if(!this.server.is_running())
 			this.start_server("localhost");
 		
@@ -291,7 +291,7 @@ public class Console extends Activity {
 		String addr = txt_addr.getText().toString().trim();
 		this.stop_server(view);
 		if(this.server == null)
-			this.server = new ServerBundle(handler);
+			this.server = new_server_instance(handler);
 		try {
 			File keystore = get_keystore();
 			if(!keystore.exists())
@@ -363,5 +363,27 @@ public class Console extends Activity {
 				boolean userdir = b.getBoolean("userdir");
 				console.status_message("Status: " + status, canwrite, userdir);
 			}
+	}
+	
+	static ServerBundle new_server_instance(AndroidHandler handler) {
+		ServerBundle retval = new ServerBundle(handler);
+		
+		// Get plugin path
+		String state = Environment.getExternalStorageState();
+    	boolean can_read = false;
+    	if (Environment.MEDIA_MOUNTED.equals(state)) {
+    	    // We can read and write the media
+    		can_read = true;
+    	} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+    	    // We can only read the media
+    	    can_read = true;
+    	} 
+    	if(can_read)
+    	{
+    		File dir = Environment.getExternalStorageDirectory();
+    		File plugin_jarfile = new File(dir, "plugins.jar");
+    		retval.set_plugin_path("file:" + plugin_jarfile.getAbsolutePath());
+    	}
+		return retval;
 	}
 }
