@@ -65,6 +65,20 @@ public class ServerBundle {
 			return "";
 		return serverd.getdir();
 	}
+	
+	public String set_plugin_path(String path) {
+		if(this.serverd == null)
+			return null;
+		
+		return this.serverd.set_plugin_path(path);
+	}
+	
+	public String get_plugin_path() {
+		if(this.serverd == null)
+			return null;
+		
+		return this.serverd.get_plugin_path();
+	}
 
 	public void stop_server() throws IOException, InterruptedException {
 		handler.debug("Standalone.stop_server", "Stopping Server");

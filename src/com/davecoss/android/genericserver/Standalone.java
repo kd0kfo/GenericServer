@@ -217,6 +217,14 @@ public class Standalone {
 						handler.traceback(e);
 					}
 				}
+			} else if (input.equals("plugin")) {
+				cout.println("Plugin path: " + server.get_plugin_path());
+				String new_path = console.readLine("Set plugin path (leave empty to ignore): ");
+				if(new_path.length() > 0)
+				{
+					server.set_plugin_path(new_path);
+					cout.println("Path set to " + server.get_plugin_path());
+				}
 			} else {
 				if(input.trim().length() > 0)
 					cout.println("Unknown: " + input);

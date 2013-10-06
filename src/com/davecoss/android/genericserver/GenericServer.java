@@ -46,6 +46,7 @@ public class GenericServer implements Runnable {
 	protected ServerHandler handler;
 	protected String outfile_name = "output.dat";
 	protected boolean has_write_permission = false;
+	protected String plugin_path = Plugin.DEFAULT_PLUGIN_PATH;
 
 	public static final String DEFAULT_HOSTNAME = "localhost";
 	public static final int DEFAULT_PORT = 4242;
@@ -363,6 +364,16 @@ public class GenericServer implements Runnable {
 		return dir;
 	}
 	
+	public String set_plugin_path(String path) {
+		this.plugin_path = path;
+		
+		return this.plugin_path;
+	}
+	
+	public String get_plugin_path() {
+		return this.plugin_path;
+	}
+	
 	public synchronized boolean is_running() {
 		return (this.listener != null && !this.listener.isClosed());
 	}
@@ -661,7 +672,7 @@ public class GenericServer implements Runnable {
 			plugin_name = request.get(1);
 			Plugin plugin = new Plugin(Plugin.getDefaultURLs());
 			try {
-				plugin.addURL(new URL("file:plugins.jar"));
+				plugin.addURL(new URL(this.plugin_path));
 				@SuppressWarnings("rawtypes")
 				Class test = plugin.loadClass(plugin_name);
 				Object obj = test.newInstance();
