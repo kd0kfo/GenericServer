@@ -34,7 +34,9 @@
     </target>
 
     <target name="run" depends="jar">
-      <java fork="true" classpathref="classpath" classpath="build/jar/${jar.name}" classname="${main.class}" args="-c server.conf"/>
+      <java fork="true" classpathref="classpath" classpath="build/jar/${jar.name}" classname="${main.class}">
+	<arg value="-c"/>
+      </java>
     </target>
 
 </project>
