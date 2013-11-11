@@ -1,7 +1,7 @@
 <project>
 
   <tstamp>
-    <format property="BUILD_TIME" pattern="yyyy-mm-dd HH:MM"/>
+    <format property="BUILD_TIME" pattern="yyyy-MM-dd HH:mm"/>
   </tstamp>
 
   <property name="lib.dir" value="libs"/>
